@@ -28,14 +28,16 @@ async function uploadCv() {
 
 <template>
   <AppLayout>
-    <h2 class="text-2xl font-bold mb-4">Quản lý CV cá nhân</h2>
-    <div class="bg-white border rounded-lg p-4 max-w-xl">
-      <input type="file" accept=".pdf,.doc,.docx" @change="(e) => (cvFile = e.target.files[0])" />
-      <button class="mt-3 px-4 py-2 rounded bg-slate-900 text-white" :disabled="loading" @click="uploadCv">
+    <h2 class="btc-page-title">Quản lý CV cá nhân</h2>
+    <p class="btc-page-subtitle">Tải CV để dùng cho ứng tuyển và phân tích AI.</p>
+
+    <div class="btc-card max-w-2xl">
+      <input class="btc-input" type="file" accept=".pdf,.doc,.docx" @change="(e) => (cvFile = e.target.files[0] || null)" />
+      <button class="btc-btn-primary mt-3" :disabled="loading" @click="uploadCv">
         Upload CV
       </button>
       <p v-if="uploadedUrl" class="mt-3 text-sm">CV URL: <a :href="uploadedUrl" target="_blank" class="text-blue-600">{{ uploadedUrl }}</a></p>
-      <p v-if="error" class="mt-2 text-red-600 text-sm">{{ error }}</p>
+      <p v-if="error" class="mt-2 text-sm text-rose-600">{{ error }}</p>
     </div>
   </AppLayout>
 </template>

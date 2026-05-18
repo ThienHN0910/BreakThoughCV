@@ -21,4 +21,12 @@
 
 ## Troubleshooting
 - POST `/api/jobs` with empty `categoryId` should now be accepted and treated as `null`. If `categoryId` is provided but not a valid Mongo ObjectId, API returns `400` with message `categoryId is not a valid ObjectId`.
+- `POST /api/companies` follows the same `categoryId` validation and empty-string normalization.
 - Frontend now auto-handles `401 Unauthorized`: session in local storage is cleared and user is redirected to `/login`.
+
+## Documentation
+- Feature documentation: `docs/FEATURES.md`
+- Latest test report: `docs/TEST_REPORT.md`
+
+## Test Script
+- Run API smoke tests: `./scripts/feature-smoke-test.ps1`

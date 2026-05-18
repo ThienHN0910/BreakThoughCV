@@ -38,25 +38,27 @@ onMounted(async () => {
 
 <template>
   <AppLayout>
-    <h2 class="text-2xl font-bold mb-4">Ứng viên đã apply</h2>
-    <div class="bg-white border rounded-lg p-4 mb-4">
-      <select v-model="selectedJobId" class="border rounded p-2 mr-2">
+    <h2 class="btc-page-title">Ứng viên đã apply</h2>
+    <p class="btc-page-subtitle">Theo dõi hồ sơ ứng tuyển và cập nhật trạng thái xử lý.</p>
+
+    <div class="btc-card mb-4 flex flex-wrap items-center gap-2">
+      <select v-model="selectedJobId" class="btc-input max-w-sm">
         <option v-for="j in jobs" :key="j.id" :value="j.id">{{ j.title }}</option>
       </select>
-      <button class="bg-slate-900 text-white rounded p-2" @click="loadApplications">Xem ứng viên</button>
+      <button class="btc-btn-primary" @click="loadApplications">Xem ứng viên</button>
     </div>
 
-    <p v-if="error" class="text-red-600 mb-3">{{ error }}</p>
+    <p v-if="error" class="mb-3 text-rose-600">{{ error }}</p>
 
     <div class="space-y-3">
-      <div v-for="item in applications" :key="item.id" class="bg-white border rounded-lg p-4">
+      <div v-for="item in applications" :key="item.id" class="btc-card">
         <h3 class="font-semibold">{{ item.candidateName }}</h3>
         <p class="text-sm text-slate-600">{{ item.candidateEmail }}</p>
         <a :href="item.cvUrl" target="_blank" class="text-blue-600 text-sm">Xem CV</a>
         <div class="mt-2 flex items-center gap-2">
           <span class="text-sm">Trạng thái: {{ item.status }}</span>
-          <button class="border rounded px-2 py-1 text-xs" @click="updateStatus(item, 'Pending')">Pending</button>
-          <button class="border rounded px-2 py-1 text-xs" @click="updateStatus(item, 'Reviewed')">Reviewed</button>
+          <button class="btc-btn-secondary px-2.5 py-1 text-xs" @click="updateStatus(item, 'Pending')">Pending</button>
+          <button class="btc-btn-secondary px-2.5 py-1 text-xs" @click="updateStatus(item, 'Reviewed')">Reviewed</button>
         </div>
       </div>
     </div>

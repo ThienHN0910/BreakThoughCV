@@ -63,13 +63,21 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center">
-    <div class="bg-white rounded-xl shadow p-8 w-full max-w-md">
-      <h2 class="text-2xl font-bold mb-2">Đăng nhập</h2>
-      <p class="text-slate-500 mb-6">Đăng nhập với Google để tiếp tục.</p>
-      <div id="googleBtn" class="min-h-10"></div>
-      <p v-if="loadingGoogle" class="text-sm mt-3">Đang xử lý đăng nhập...</p>
-      <p v-if="error" class="text-sm mt-3 text-red-600">{{ error }}</p>
+  <div class="flex min-h-screen items-center justify-center px-4 py-8">
+    <div class="grid w-full max-w-5xl gap-5 lg:grid-cols-[1.15fr_1fr]">
+      <div class="btc-card hidden lg:block">
+        <p class="inline-block rounded-full bg-blue-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-700">BreakThroughCV</p>
+        <h1 class="mt-4 text-4xl font-bold leading-tight">Đăng nhập nhanh<br />để tối ưu CV và tuyển dụng.</h1>
+        <p class="mt-3 text-slate-600">Candidate có thể đánh giá CV theo JD bằng AI, recruiter quản lý tin tuyển dụng và hồ sơ ứng viên tại cùng một nơi.</p>
+      </div>
+
+      <div class="btc-card w-full md:p-8">
+        <h2 class="text-2xl font-bold">Đăng nhập</h2>
+        <p class="mb-6 mt-2 text-sm text-slate-500">Sử dụng Google để truy cập hệ thống.</p>
+        <div id="googleBtn" class="min-h-10"></div>
+        <p v-if="loadingGoogle" class="mt-3 text-sm">Đang xử lý đăng nhập...</p>
+        <p v-if="error" class="mt-3 text-sm text-rose-600">{{ error }}</p>
+      </div>
     </div>
   </div>
 </template>

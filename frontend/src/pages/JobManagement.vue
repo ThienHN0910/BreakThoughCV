@@ -76,33 +76,34 @@ onMounted(async () => {
 
 <template>
   <AppLayout>
-    <h2 class="text-2xl font-bold mb-4">Đăng tuyển & quản lý Job</h2>
+    <h2 class="btc-page-title">Đăng tuyển & quản lý Job</h2>
+    <p class="btc-page-subtitle">Tạo mới hoặc cập nhật JD cho công ty của bạn.</p>
     <div class="grid lg:grid-cols-2 gap-4">
-      <div class="bg-white border rounded-lg p-4 space-y-3">
-        <input v-model="form.title" class="border rounded p-2 w-full" placeholder="Tiêu đề" />
-        <select v-model="form.categoryId" class="border rounded p-2 w-full">
+      <div class="btc-card space-y-3">
+        <input v-model="form.title" class="btc-input" placeholder="Tiêu đề" />
+        <select v-model="form.categoryId" class="btc-input">
           <option value="">Chọn danh mục</option>
           <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
         </select>
-        <textarea v-model="form.description" class="border rounded p-2 w-full" rows="3" placeholder="Mô tả"></textarea>
+        <textarea v-model="form.description" class="btc-input" rows="3" placeholder="Mô tả"></textarea>
         <TagInput v-model="form.responsibilities" placeholder="Responsibilities" />
         <TagInput v-model="form.mustHaveSkills" placeholder="Must-have skills" />
         <TagInput v-model="form.niceToHaveSkills" placeholder="Nice-to-have skills" />
-        <input v-model.number="form.minExperienceYears" type="number" min="0" class="border rounded p-2 w-full" placeholder="Số năm kinh nghiệm" />
+        <input v-model.number="form.minExperienceYears" type="number" min="0" class="btc-input" placeholder="Số năm kinh nghiệm" />
         <div class="flex gap-2">
-          <button class="bg-slate-900 text-white rounded p-2" @click="save">{{ editId ? 'Cập nhật' : 'Tạo job' }}</button>
-          <button v-if="editId" class="border rounded p-2" @click="resetForm">Hủy</button>
+          <button class="btc-btn-primary" @click="save">{{ editId ? 'Cập nhật' : 'Tạo job' }}</button>
+          <button v-if="editId" class="btc-btn-secondary" @click="resetForm">Hủy</button>
         </div>
-        <p v-if="error" class="text-red-600 text-sm">{{ error }}</p>
+        <p v-if="error" class="text-sm text-rose-600">{{ error }}</p>
       </div>
 
       <div class="space-y-3">
-        <div v-for="job in jobs" :key="job.id" class="bg-white border rounded-lg p-4">
+        <div v-for="job in jobs" :key="job.id" class="btc-card">
           <h3 class="font-semibold">{{ job.title }}</h3>
           <p class="text-sm text-slate-600">{{ job.description }}</p>
           <div class="mt-3 flex gap-2">
-            <button class="border rounded px-3 py-1" @click="edit(job)">Sửa</button>
-            <button class="border rounded px-3 py-1 text-red-600" @click="removeJob(job.id)">Xóa</button>
+            <button class="btc-btn-secondary" @click="edit(job)">Sửa</button>
+            <button class="btc-btn-secondary border-rose-200 text-rose-700" @click="removeJob(job.id)">Xóa</button>
           </div>
         </div>
       </div>

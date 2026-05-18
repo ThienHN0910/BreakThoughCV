@@ -1,7 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-slate-100 text-slate-900;
+@layer base {
+  :root {
+    --btc-bg-1: #f9fbff;
+    --btc-bg-2: #eef5ff;
+    --btc-ink: #132238;
+    --btc-muted: #5d728a;
+    --btc-primary: #0b5fff;
+    --btc-primary-2: #00b4d8;
+    --btc-surface: rgba(255, 255, 255, 0.9);
+    --btc-border: rgba(19, 34, 56, 0.12);
+  }
+
+  html,
+  body,
+  #app {
+    min-height: 100%;
+  }
+
+  body {
+    @apply m-0;
+    font-family: 'Manrope', 'Segoe UI', sans-serif;
+    color: var(--btc-ink);
+    background:
+      radial-gradient(circle at 8% 12%, rgba(11, 95, 255, 0.16), transparent 45%),
+      radial-gradient(circle at 88% 18%, rgba(0, 180, 216, 0.15), transparent 40%),
+      linear-gradient(160deg, var(--btc-bg-1), var(--btc-bg-2));
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: 'Sora', 'Manrope', sans-serif;
+    @apply tracking-tight;
+  }
+}
+
+@layer components {
+  .btc-shell {
+    @apply mx-auto max-w-7xl px-4 md:px-6;
+  }
+
+  .btc-card {
+    @apply rounded-2xl border p-4 md:p-5 shadow-sm;
+    background: var(--btc-surface);
+    border-color: var(--btc-border);
+    backdrop-filter: blur(4px);
+  }
+
+  .btc-input {
+    @apply w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition;
+    border-color: var(--btc-border);
+    background: rgba(255, 255, 255, 0.95);
+  }
+
+  .btc-input:focus {
+    border-color: rgba(11, 95, 255, 0.45);
+    box-shadow: 0 0 0 3px rgba(11, 95, 255, 0.12);
+  }
+
+  .btc-btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition;
+    background: linear-gradient(120deg, var(--btc-primary), var(--btc-primary-2));
+  }
+
+  .btc-btn-primary:hover {
+    filter: brightness(1.04);
+    transform: translateY(-1px);
+  }
+
+  .btc-btn-secondary {
+    @apply inline-flex items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-semibold transition;
+    border-color: var(--btc-border);
+    color: var(--btc-ink);
+    background: rgba(255, 255, 255, 0.88);
+  }
+
+  .btc-page-title {
+    @apply mb-2 text-2xl font-bold md:text-3xl;
+  }
+
+  .btc-page-subtitle {
+    @apply mb-6 text-sm md:text-base;
+    color: var(--btc-muted);
+  }
 }

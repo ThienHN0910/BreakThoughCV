@@ -3,6 +3,7 @@ using BreakThroughCV.API.Models;
 using BreakThroughCV.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Security.Claims;
 
@@ -49,6 +50,9 @@ public class CompanyController : ControllerBase
     public async Task<IActionResult> Upsert([FromForm] UpsertCompanyRequest request, IFormFile? logo)
     {
         if (!IsRecruiter()) return Forbid();
+        if (!TryNormalizeOptionalObjectId(request.CategoryId, out var normalizedCategoryId))
+            return BadRequest(new { message = "categoryId is not a valid ObjectId" });
+
         var userId = GetUserId();
         var existing = await _db.Companies.Find(c => c.RecruiterId == userId).FirstOrDefaultAsync();
 
@@ -70,7 +74,7 @@ public class CompanyController : ControllerBase
                 Name = request.Name,
                 LogoUrl = logoUrl,
                 Description = request.Description,
-                CategoryId = request.CategoryId,
+                CategoryId = normalizedCategoryId,
                 Website = request.Website
             };
             await _db.Companies.InsertOneAsync(company);
@@ -81,17 +85,35 @@ public class CompanyController : ControllerBase
             var update = Builders<Company>.Update
                 .Set(c => c.Name, request.Name)
                 .Set(c => c.Description, request.Description)
-                .Set(c => c.CategoryId, request.CategoryId)
+                .Set(c => c.CategoryId, normalizedCategoryId)
                 .Set(c => c.Website, request.Website)
                 .Set(c => c.LogoUrl, logoUrl);
             await _db.Companies.UpdateOneAsync(c => c.Id == existing.Id, update);
             existing.Name = request.Name;
             existing.Description = request.Description;
-            existing.CategoryId = request.CategoryId;
+            existing.CategoryId = normalizedCategoryId;
             existing.Website = request.Website;
             existing.LogoUrl = logoUrl;
             return Ok(MapToDto(existing));
         }
+    }
+
+    private static bool TryNormalizeOptionalObjectId(string? value, out string? normalized)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            normalized = null;
+            return true;
+        }
+
+        if (!ObjectId.TryParse(value, out _))
+        {
+            normalized = null;
+            return false;
+        }
+
+        normalized = value;
+        return true;
     }
 
     private static CompanyResponse MapToDto(Company c) => new(

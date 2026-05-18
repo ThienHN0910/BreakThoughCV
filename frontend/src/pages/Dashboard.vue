@@ -22,15 +22,18 @@ const links = computed(() =>
 
 <template>
   <AppLayout>
-    <h2 class="text-2xl font-bold mb-4">Xin chào, {{ auth.user?.name }}</h2>
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <h2 class="btc-page-title">Xin chào, {{ auth.user?.name }}</h2>
+    <p class="btc-page-subtitle">Truy cập nhanh các tính năng phù hợp với vai trò hiện tại của bạn.</p>
+
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <RouterLink
         v-for="item in links"
         :key="item.to"
         :to="item.to"
-        class="block p-4 rounded-lg border bg-white hover:border-slate-400"
+        class="btc-card block transition hover:-translate-y-0.5 hover:border-blue-300"
       >
-        {{ item.label }}
+        <p class="text-xs font-semibold uppercase tracking-wider text-blue-700">Feature</p>
+        <p class="mt-1 text-lg font-semibold">{{ item.label }}</p>
       </RouterLink>
     </div>
   </AppLayout>

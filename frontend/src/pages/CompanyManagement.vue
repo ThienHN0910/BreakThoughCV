@@ -44,19 +44,21 @@ onMounted(loadData)
 
 <template>
   <AppLayout>
-    <h2 class="text-2xl font-bold mb-4">Quản lý công ty</h2>
-    <div class="bg-white border rounded-lg p-4 grid gap-3 max-w-2xl">
-      <input v-model="form.name" class="border rounded p-2" placeholder="Tên công ty" />
-      <textarea v-model="form.description" class="border rounded p-2" rows="4" placeholder="Mô tả"></textarea>
-      <input v-model="form.website" class="border rounded p-2" placeholder="Website" />
-      <select v-model="form.categoryId" class="border rounded p-2">
+    <h2 class="btc-page-title">Quản lý công ty</h2>
+    <p class="btc-page-subtitle">Tạo hoặc cập nhật hồ sơ công ty để đăng tuyển dụng.</p>
+
+    <div class="btc-card grid max-w-3xl gap-3">
+      <input v-model="form.name" class="btc-input" placeholder="Tên công ty" />
+      <textarea v-model="form.description" class="btc-input" rows="4" placeholder="Mô tả"></textarea>
+      <input v-model="form.website" class="btc-input" placeholder="Website" />
+      <select v-model="form.categoryId" class="btc-input">
         <option value="">Chọn danh mục</option>
         <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
       </select>
-      <input type="file" accept="image/*" @change="(e) => (logo = e.target.files[0])" />
-      <button class="bg-slate-900 text-white rounded p-2" @click="save">Lưu</button>
-      <p v-if="message" class="text-green-600 text-sm">{{ message }}</p>
-      <p v-if="error" class="text-red-600 text-sm">{{ error }}</p>
+      <input class="btc-input" type="file" accept="image/*" @change="(e) => (logo = e.target.files[0] || null)" />
+      <button class="btc-btn-primary w-fit" @click="save">Lưu</button>
+      <p v-if="message" class="text-sm text-emerald-700">{{ message }}</p>
+      <p v-if="error" class="text-sm text-rose-600">{{ error }}</p>
     </div>
   </AppLayout>
 </template>

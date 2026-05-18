@@ -34,26 +34,28 @@ onMounted(async () => {
 
 <template>
   <AppLayout>
-    <h2 class="text-2xl font-bold mb-4">Tìm kiếm việc làm</h2>
-    <div class="grid md:grid-cols-3 gap-3 mb-4">
-      <select v-model="categoryId" class="border rounded p-2 bg-white">
+    <h2 class="btc-page-title">Tìm kiếm việc làm</h2>
+    <p class="btc-page-subtitle">Lọc theo danh mục và từ khóa để tìm JD phù hợp với kỹ năng của bạn.</p>
+
+    <div class="btc-card mb-4 grid gap-3 md:grid-cols-3">
+      <select v-model="categoryId" class="btc-input">
         <option value="">Tất cả danh mục</option>
         <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
       </select>
-      <input v-model="keyword" class="border rounded p-2 bg-white" placeholder="Tìm theo title hoặc skill" />
-      <button class="bg-slate-900 text-white rounded p-2" @click="loadJobs">Lọc</button>
+      <input v-model="keyword" class="btc-input" placeholder="Tìm theo title hoặc skill" />
+      <button class="btc-btn-primary" @click="loadJobs">Lọc</button>
     </div>
 
-    <p v-if="error" class="text-red-600 mb-3">{{ error }}</p>
+    <p v-if="error" class="mb-3 text-rose-600">{{ error }}</p>
     <p v-if="loading">Đang tải...</p>
 
-    <div class="grid gap-3">
-      <div v-for="job in jobs" :key="job.id" class="bg-white border rounded-lg p-4">
+    <div class="grid gap-4">
+      <div v-for="job in jobs" :key="job.id" class="btc-card">
         <h3 class="font-semibold text-lg">{{ job.title }}</h3>
         <p class="text-sm text-slate-500">{{ job.companyName }} • {{ job.categoryName || 'Chưa phân loại' }}</p>
         <p class="mt-2 text-sm">{{ job.description }}</p>
         <div class="mt-2 flex flex-wrap gap-2 text-xs">
-          <span v-for="s in job.mustHaveSkills" :key="s" class="px-2 py-1 bg-teal-100 rounded">{{ s }}</span>
+          <span v-for="s in job.mustHaveSkills" :key="s" class="rounded-full bg-cyan-50 px-2.5 py-1 text-cyan-700">{{ s }}</span>
         </div>
       </div>
     </div>

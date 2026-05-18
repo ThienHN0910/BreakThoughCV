@@ -44,24 +44,25 @@ loadJobs()
 
 <template>
   <AppLayout>
-    <h2 class="text-2xl font-bold mb-4">AI Review CV theo JD</h2>
+    <h2 class="btc-page-title">AI Review CV theo JD</h2>
+    <p class="btc-page-subtitle">Dán nội dung CV để nhận gợi ý chỉnh sửa và điểm phù hợp với vị trí ứng tuyển.</p>
 
-    <div class="bg-white border rounded-lg p-4 space-y-3">
-      <select v-model="selectedJobId" class="border rounded p-2 w-full">
+    <div class="btc-card space-y-3">
+      <select v-model="selectedJobId" class="btc-input">
         <option value="">Chọn job để review</option>
         <option v-for="job in jobs" :key="job.id" :value="job.id">{{ job.title }}</option>
       </select>
-      <textarea v-model="cvText" class="border rounded p-2 w-full" rows="8" placeholder="Dán nội dung CV tại đây"></textarea>
+      <textarea v-model="cvText" class="btc-input" rows="8" placeholder="Dán nội dung CV tại đây"></textarea>
       <div class="flex gap-2">
-        <button class="bg-teal-700 text-white rounded p-2" :disabled="!cvText" @click="suggestJobs">Gợi ý top 3 job</button>
-        <button class="bg-slate-900 text-white rounded p-2" :disabled="!cvText || !selectedJobId || loading" @click="reviewCv">
+        <button class="btc-btn-secondary" :disabled="!cvText" @click="suggestJobs">Gợi ý top 3 job</button>
+        <button class="btc-btn-primary" :disabled="!cvText || !selectedJobId || loading" @click="reviewCv">
           Review CV
         </button>
       </div>
-      <p v-if="error" class="text-red-600 text-sm">{{ error }}</p>
+      <p v-if="error" class="text-sm text-rose-600">{{ error }}</p>
     </div>
 
-    <div v-if="suggestions.length" class="mt-4 bg-white border rounded-lg p-4">
+    <div v-if="suggestions.length" class="btc-card mt-4">
       <h3 class="font-semibold mb-2">AI Job Suggestions</h3>
       <ul class="list-disc pl-5 text-sm space-y-1">
         <li v-for="s in suggestions" :key="`${s.jobId}-${s.reason}`">{{ s.jobId }} - {{ s.reason }}</li>
@@ -69,7 +70,7 @@ loadJobs()
     </div>
 
     <div v-if="review" class="mt-4 grid lg:grid-cols-[220px_1fr] gap-4">
-      <div class="bg-white border rounded-lg p-4 flex flex-col items-center gap-4">
+      <div class="btc-card flex flex-col items-center gap-4">
         <CircleScore :score="review.score" />
         <div>
           <h3 class="font-semibold mb-2">Missing Keywords</h3>
@@ -79,10 +80,10 @@ loadJobs()
         </div>
       </div>
 
-      <div class="bg-white border rounded-lg p-4">
+      <div class="btc-card">
         <h3 class="font-semibold mb-3">Side-by-Side AI Suggestion</h3>
         <div class="space-y-4">
-          <div v-for="(s, idx) in review.tailoredSuggestions" :key="idx" class="border rounded p-3">
+          <div v-for="(s, idx) in review.tailoredSuggestions" :key="idx" class="rounded-xl border border-slate-200 p-3">
             <p class="font-medium mb-2">{{ s.section }}</p>
             <div class="grid md:grid-cols-2 gap-3 text-sm">
               <div>
