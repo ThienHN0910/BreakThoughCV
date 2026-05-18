@@ -24,7 +24,7 @@ public class GeminiService
     {
         try
         {
-            var url = $"https://generativelanguage.googleapis.com/v1beta/models/{_settings.Model}:generateContent?key={_settings.ApiKey}";
+            var url = $"https://generativelanguage.googleapis.com/v1beta/models/{_settings.Model}:generateContent";
             var requestBody = new
             {
                 contents = new[]
@@ -45,8 +45,10 @@ public class GeminiService
             };
 
             var json = JsonSerializer.Serialize(requestBody);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync(url, content);
+            using var request = new HttpRequestMessage(HttpMethod.Post, url);
+            request.Headers.Add("x-goog-api-key", _settings.ApiKey);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            var response = await _httpClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
             {
