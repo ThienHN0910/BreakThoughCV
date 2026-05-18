@@ -1,0 +1,6 @@
+@BreakThroughCV.API_HostAddress = http://localhost:5187
+
+GET {{BreakThroughCV.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
