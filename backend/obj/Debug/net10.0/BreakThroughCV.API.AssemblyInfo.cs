@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BreakThroughCV.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+67a494809a1ade911149cffef28211698b18e35d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d2b89f58ab184eebeb8a6176967629d193140ac1")]
 [assembly: System.Reflection.AssemblyProductAttribute("BreakThroughCV.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BreakThroughCV.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
