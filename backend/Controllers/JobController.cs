@@ -37,10 +37,12 @@ public class JobController : ControllerBase
 
         if (!string.IsNullOrEmpty(keyword))
         {
+            var regex = new MongoDB.Bson.BsonRegularExpression(keyword, "i");
             var keywordFilter = filterBuilder.Or(
-                filterBuilder.Regex(j => j.Title, new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
-                filterBuilder.AnyIn(j => j.MustHaveSkills, new[] { keyword }),
-                filterBuilder.AnyIn(j => j.NiceToHaveSkills, new[] { keyword })
+                filterBuilder.Regex(j => j.Title, regex),
+                filterBuilder.Regex(j => j.Description, regex),
+                filterBuilder.AnyStringIn(j => j.MustHaveSkills, new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
+                filterBuilder.AnyStringIn(j => j.NiceToHaveSkills, new MongoDB.Bson.BsonRegularExpression(keyword, "i"))
             );
             filter &= keywordFilter;
         }

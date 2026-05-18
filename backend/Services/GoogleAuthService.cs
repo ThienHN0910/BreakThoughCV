@@ -19,14 +19,10 @@ public class GoogleAuthService
     {
         try
         {
-            var settings = new GoogleJsonWebSignature.ValidationSettings
+            var settings = new GoogleJsonWebSignature.ValidationSettings();
+            if (!string.IsNullOrEmpty(_settings.ClientId))
             {
-                Audience = new[] { _settings.ClientId }
-            };
-            // If ClientId is not set, skip audience validation (for dev)
-            if (string.IsNullOrEmpty(_settings.ClientId))
-            {
-                settings = new GoogleJsonWebSignature.ValidationSettings();
+                settings.Audience = new[] { _settings.ClientId };
             }
             return await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
         }

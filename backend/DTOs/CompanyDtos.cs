@@ -16,3 +16,5 @@ public record CompanyResponse(
     string? CategoryId,
     string? Website
 );
+
+public record CreateCategoryRequest(string Name, string Slug);

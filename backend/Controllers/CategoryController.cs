@@ -1,3 +1,4 @@
+using BreakThroughCV.API.DTOs;
 using BreakThroughCV.API.Models;
 using BreakThroughCV.API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -26,8 +27,9 @@ public class CategoryController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> Create([FromBody] Category category)
+    public async Task<IActionResult> Create([FromBody] CreateCategoryRequest request)
     {
+        var category = new Category { Name = request.Name, Slug = request.Slug };
         await _db.Categories.InsertOneAsync(category);
         return CreatedAtAction(nameof(GetAll), new { id = category.Id }, category);
     }
