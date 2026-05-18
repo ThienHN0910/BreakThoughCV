@@ -3,6 +3,7 @@ using BreakThroughCV.API.Models;
 using BreakThroughCV.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Security.Claims;
 
@@ -84,6 +85,9 @@ public class JobController : ControllerBase
     public async Task<IActionResult> CreateJob([FromBody] CreateJobRequest request)
     {
         if (!IsRecruiter()) return Forbid();
+        if (!TryNormalizeOptionalObjectId(request.CategoryId, out var normalizedCategoryId))
+            return BadRequest(new { message = "categoryId is not a valid ObjectId" });
+
         var userId = GetUserId();
         var company = await _db.Companies.Find(c => c.RecruiterId == userId).FirstOrDefaultAsync();
         if (company == null) return BadRequest(new { message = "You need to create a company first" });
@@ -92,7 +96,7 @@ public class JobController : ControllerBase
         {
             CompanyId = company.Id!,
             Title = request.Title,
-            CategoryId = request.CategoryId,
+            CategoryId = normalizedCategoryId,
             Description = request.Description,
             Responsibilities = request.Responsibilities,
             MustHaveSkills = request.MustHaveSkills,
@@ -111,6 +115,9 @@ public class JobController : ControllerBase
     public async Task<IActionResult> UpdateJob(string id, [FromBody] CreateJobRequest request)
     {
         if (!IsRecruiter()) return Forbid();
+        if (!TryNormalizeOptionalObjectId(request.CategoryId, out var normalizedCategoryId))
+            return BadRequest(new { message = "categoryId is not a valid ObjectId" });
+
         var userId = GetUserId();
         var company = await _db.Companies.Find(c => c.RecruiterId == userId).FirstOrDefaultAsync();
         if (company == null) return Forbid();
@@ -120,7 +127,7 @@ public class JobController : ControllerBase
 
         var update = Builders<Job>.Update
             .Set(j => j.Title, request.Title)
-            .Set(j => j.CategoryId, request.CategoryId)
+            .Set(j => j.CategoryId, normalizedCategoryId)
             .Set(j => j.Description, request.Description)
             .Set(j => j.Responsibilities, request.Responsibilities)
             .Set(j => j.MustHaveSkills, request.MustHaveSkills)
@@ -129,7 +136,7 @@ public class JobController : ControllerBase
 
         await _db.Jobs.UpdateOneAsync(j => j.Id == id, update);
         job.Title = request.Title;
-        job.CategoryId = request.CategoryId;
+        job.CategoryId = normalizedCategoryId;
         job.Description = request.Description;
         job.Responsibilities = request.Responsibilities;
         job.MustHaveSkills = request.MustHaveSkills;
@@ -186,5 +193,23 @@ public class JobController : ControllerBase
                 CreatedAt: j.CreatedAt
             );
         }).ToList();
+    }
+
+    private static bool TryNormalizeOptionalObjectId(string? value, out string? normalized)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            normalized = null;
+            return true;
+        }
+
+        if (!ObjectId.TryParse(value, out _))
+        {
+            normalized = null;
+            return false;
+        }
+
+        normalized = value;
+        return true;
     }
 }

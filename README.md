@@ -18,3 +18,7 @@
    - `cd /home/runner/work/BreakThoughCV/BreakThoughCV/frontend`
    - `npm install`
    - `npm run dev`
+
+## Troubleshooting
+- POST `/api/jobs` with empty `categoryId` should now be accepted and treated as `null`. If `categoryId` is provided but not a valid Mongo ObjectId, API returns `400` with message `categoryId is not a valid ObjectId`.
+- Frontend now auto-handles `401 Unauthorized`: session in local storage is cleared and user is redirected to `/login`.
