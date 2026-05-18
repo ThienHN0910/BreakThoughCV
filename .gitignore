@@ -1,0 +1,20 @@
+# .NET build artifacts
+backend/bin/
+backend/obj/
+*.user
+
+# Secrets - use appsettings.Example.json as reference
+backend/appsettings.Development.json
+backend/appsettings.Production.json
+
+# IDE
+.vs/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln.docstates
+
+# OS
+.DS_Store
+Thumbs.db

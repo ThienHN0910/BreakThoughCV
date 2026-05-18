@@ -43,7 +43,7 @@ public class AuthController : ControllerBase
             };
             await _db.Users.InsertOneAsync(newUser);
             return Ok(new AuthResponse(
-                Token: string.Empty,
+                Token: null,
                 UserId: newUser.Id!,
                 Email: newUser.Email,
                 Name: newUser.Name,

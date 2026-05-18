@@ -5,7 +5,7 @@ public record GoogleLoginRequest(string IdToken);
 public record UpdateRoleRequest(string Role);
 
 public record AuthResponse(
-    string Token,
+    string? Token,
     string UserId,
     string Email,
     string Name,

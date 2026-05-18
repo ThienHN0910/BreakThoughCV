@@ -21,7 +21,8 @@ builder.Services.AddSingleton<GoogleAuthService>();
 builder.Services.AddHttpClient<GeminiService>();
 
 // JWT Authentication
-var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()!;
+var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()
+    ?? throw new InvalidOperationException("JwtSettings configuration is missing. Ensure appsettings.json is present and contains a valid JwtSettings section.");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
