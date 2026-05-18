@@ -26,6 +26,9 @@ public class AuthController : ControllerBase
     [HttpPost("google-login")]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.IdToken))
+            return BadRequest(new { message = "IdToken is required" });
+
         var payload = await _googleAuth.ValidateTokenAsync(request.IdToken);
         if (payload == null) return Unauthorized(new { message = "Invalid Google token" });
 
@@ -42,8 +45,9 @@ public class AuthController : ControllerBase
                 CreatedAt = DateTime.UtcNow
             };
             await _db.Users.InsertOneAsync(newUser);
+            var newUserToken = _jwtService.GenerateToken(newUser);
             return Ok(new AuthResponse(
-                Token: null,
+                Token: newUserToken,
                 UserId: newUser.Id!,
                 Email: newUser.Email,
                 Name: newUser.Name,

@@ -23,10 +23,12 @@ public class AIController : ControllerBase
     }
 
     private string GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+    private bool IsCandidate() => User.FindFirst("role")?.Value == "candidate";
 
     [HttpPost("suggest-jobs")]
     public async Task<IActionResult> SuggestJobs([FromBody] JobSuggestionRequest request)
     {
+        if (!IsCandidate()) return Forbid();
         if (string.IsNullOrWhiteSpace(request.CvText))
             return BadRequest(new { message = "CV text is required" });
 
@@ -42,6 +44,7 @@ public class AIController : ControllerBase
     [HttpPost("review-cv")]
     public async Task<IActionResult> ReviewCv([FromBody] CvReviewRequest request)
     {
+        if (!IsCandidate()) return Forbid();
         if (string.IsNullOrWhiteSpace(request.CvText))
             return BadRequest(new { message = "CV text is required" });
 
@@ -85,6 +88,7 @@ public class AIController : ControllerBase
     [HttpGet("review-history")]
     public async Task<IActionResult> GetReviewHistory()
     {
+        if (!IsCandidate()) return Forbid();
         var candidateId = GetUserId();
         var reviews = await _db.CvReviews.Find(r => r.CandidateId == candidateId)
             .SortByDescending(r => r.CreatedAt).ToListAsync();

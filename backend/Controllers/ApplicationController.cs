@@ -23,11 +23,15 @@ public class ApplicationController : ControllerBase
     }
 
     private string GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+    private string GetRole() => User.FindFirst("role")?.Value ?? "none";
 
     [HttpPost]
     public async Task<IActionResult> Apply([FromForm] ApplyJobRequest request, IFormFile cvFile)
     {
+        if (GetRole() != "candidate") return Forbid();
         var candidateId = GetUserId();
+        if (!FileValidationService.IsValidCv(cvFile, out var validationError))
+            return BadRequest(new { message = validationError });
 
         var existing = await _db.Applications.Find(
             a => a.JobId == request.JobId && a.CandidateId == candidateId
@@ -53,6 +57,7 @@ public class ApplicationController : ControllerBase
     [HttpGet("my")]
     public async Task<IActionResult> GetMyApplications()
     {
+        if (GetRole() != "candidate") return Forbid();
         var candidateId = GetUserId();
         var applications = await _db.Applications.Find(a => a.CandidateId == candidateId)
             .SortByDescending(a => a.AppliedAt).ToListAsync();
@@ -64,6 +69,7 @@ public class ApplicationController : ControllerBase
     [HttpGet("job/{jobId}")]
     public async Task<IActionResult> GetByJob(string jobId)
     {
+        if (GetRole() != "recruiter") return Forbid();
         var recruiterId = GetUserId();
         var company = await _db.Companies.Find(c => c.RecruiterId == recruiterId).FirstOrDefaultAsync();
         if (company == null) return Forbid();
@@ -81,6 +87,7 @@ public class ApplicationController : ControllerBase
     [HttpPut("{id}/status")]
     public async Task<IActionResult> UpdateStatus(string id, [FromBody] UpdateApplicationStatusRequest request)
     {
+        if (GetRole() != "recruiter") return Forbid();
         if (request.Status != "Pending" && request.Status != "Reviewed")
             return BadRequest(new { message = "Invalid status" });
 

@@ -20,20 +20,14 @@ public class CvController : ControllerBase
     }
 
     private string GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+    private string GetRole() => User.FindFirst("role")?.Value ?? "none";
 
     [HttpPost("upload")]
     public async Task<IActionResult> UploadCv(IFormFile cvFile)
     {
-        if (cvFile == null || cvFile.Length == 0)
-            return BadRequest(new { message = "No file provided" });
-
-        var allowedTypes = new[] { "application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document" };
-        if (!allowedTypes.Contains(cvFile.ContentType))
-            return BadRequest(new { message = "Only PDF and DOCX files are allowed" });
-
-        const long maxSize = 10 * 1024 * 1024; // 10MB
-        if (cvFile.Length > maxSize)
-            return BadRequest(new { message = "File size must not exceed 10MB" });
+        if (GetRole() != "candidate") return Forbid();
+        if (!FileValidationService.IsValidCv(cvFile, out var validationError))
+            return BadRequest(new { message = validationError });
 
         var url = await _cloudinary.UploadFileAsync(cvFile, "cvs");
         if (url == null) return StatusCode(500, new { message = "Failed to upload CV" });

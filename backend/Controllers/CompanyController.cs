@@ -23,10 +23,12 @@ public class CompanyController : ControllerBase
     }
 
     private string GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+    private bool IsRecruiter() => User.FindFirst("role")?.Value == "recruiter";
 
     [HttpGet("my")]
     public async Task<IActionResult> GetMyCompany()
     {
+        if (!IsRecruiter()) return Forbid();
         var userId = GetUserId();
         var company = await _db.Companies.Find(c => c.RecruiterId == userId).FirstOrDefaultAsync();
         if (company == null) return NotFound(new { message = "No company found" });
@@ -46,12 +48,16 @@ public class CompanyController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Upsert([FromForm] UpsertCompanyRequest request, IFormFile? logo)
     {
+        if (!IsRecruiter()) return Forbid();
         var userId = GetUserId();
         var existing = await _db.Companies.Find(c => c.RecruiterId == userId).FirstOrDefaultAsync();
 
         string? logoUrl = existing?.LogoUrl;
         if (logo != null)
         {
+            if (!FileValidationService.IsValidImage(logo, out var validationError))
+                return BadRequest(new { message = validationError });
+
             logoUrl = await _cloudinary.UploadImageAsync(logo, "company-logos");
             if (logoUrl == null) return StatusCode(500, new { message = "Failed to upload logo" });
         }

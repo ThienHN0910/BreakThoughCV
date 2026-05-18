@@ -20,6 +20,7 @@ public class JobController : ControllerBase
     }
 
     private string GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+    private bool IsRecruiter() => User.FindFirst("role")?.Value == "recruiter";
 
     [HttpGet]
     [AllowAnonymous]
@@ -82,6 +83,7 @@ public class JobController : ControllerBase
     [Authorize]
     public async Task<IActionResult> CreateJob([FromBody] CreateJobRequest request)
     {
+        if (!IsRecruiter()) return Forbid();
         var userId = GetUserId();
         var company = await _db.Companies.Find(c => c.RecruiterId == userId).FirstOrDefaultAsync();
         if (company == null) return BadRequest(new { message = "You need to create a company first" });
@@ -108,6 +110,7 @@ public class JobController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateJob(string id, [FromBody] CreateJobRequest request)
     {
+        if (!IsRecruiter()) return Forbid();
         var userId = GetUserId();
         var company = await _db.Companies.Find(c => c.RecruiterId == userId).FirstOrDefaultAsync();
         if (company == null) return Forbid();
@@ -141,6 +144,7 @@ public class JobController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteJob(string id)
     {
+        if (!IsRecruiter()) return Forbid();
         var userId = GetUserId();
         var company = await _db.Companies.Find(c => c.RecruiterId == userId).FirstOrDefaultAsync();
         if (company == null) return Forbid();
