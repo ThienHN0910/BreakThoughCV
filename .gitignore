@@ -6,6 +6,7 @@ backend/obj/
 # Secrets - use appsettings.Example.json as reference
 backend/appsettings.Development.json
 backend/appsettings.Production.json
+backend/appsettings.json
 
 # IDE
 .vs/
