@@ -31,6 +31,14 @@ public class CvReview
 
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("requestedByRecruiterId")]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string? RequestedByRecruiterId { get; set; }
+
+    [BsonElement("applicationId")]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string? ApplicationId { get; set; }
 }
 
 public class TailoredSuggestion

@@ -101,6 +101,21 @@ public class CvController : ControllerBase
 
             var resp = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
+            // If remote returned 401 and it's a Cloudinary URL, try admin download
+            if (resp.StatusCode == System.Net.HttpStatusCode.Unauthorized && targetUrl.Contains("res.cloudinary.com"))
+            {
+                var cloudStream = await _cloudinary.DownloadFileAsync(targetUrl);
+                if (cloudStream != null)
+                {
+                    Response.StatusCode = 200;
+                    Response.ContentType = "application/pdf";
+                    Response.Headers["Accept-Ranges"] = "bytes";
+                    Response.ContentLength = cloudStream.Length;
+                    await cloudStream.CopyToAsync(Response.Body);
+                    return;
+                }
+            }
+
             Response.StatusCode = (int)resp.StatusCode;
 
             // Copy selected headers

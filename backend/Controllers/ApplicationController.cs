@@ -167,7 +167,37 @@ public class ApplicationController : ControllerBase
         var reviewResult = await _gemini.ReviewCvAsync(cvText, job);
         if (reviewResult == null) return StatusCode(503, new { message = "AI service unavailable" });
 
-        return Ok(reviewResult);
+        // persist review record with recruiter info
+        var cvReview = new CvReview
+        {
+            CandidateId = application.CandidateId,
+            JobId = application.JobId,
+            Score = reviewResult.Score,
+            MissingKeywords = reviewResult.MissingKeywords,
+            CriticalFixes = reviewResult.CriticalFixes,
+            TailoredSuggestions = reviewResult.TailoredSuggestions.Select(s => new TailoredSuggestion
+            {
+                Section = s.Section,
+                OriginalText = s.OriginalText,
+                SuggestedText = s.SuggestedText
+            }).ToList(),
+            CreatedAt = DateTime.UtcNow,
+            RequestedByRecruiterId = recruiterId,
+            ApplicationId = application.Id
+        };
+
+        await _db.CvReviews.InsertOneAsync(cvReview);
+
+        return Ok(new CvReviewResponse(
+            Id: cvReview.Id!,
+            Score: cvReview.Score,
+            MissingKeywords: cvReview.MissingKeywords,
+            CriticalFixes: cvReview.CriticalFixes,
+            TailoredSuggestions: cvReview.TailoredSuggestions.Select(s => new TailoredSuggestionDto(
+                s.Section, s.OriginalText, s.SuggestedText
+            )).ToList(),
+            CreatedAt: cvReview.CreatedAt
+        ));
     }
 
     private async Task<List<ApplicationResponse>> EnrichApplicationsAsync(List<Application> applications)
