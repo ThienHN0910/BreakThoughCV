@@ -33,4 +33,27 @@ public class CategoryController : ControllerBase
         await _db.Categories.InsertOneAsync(category);
         return CreatedAtAction(nameof(GetAll), new { id = category.Id }, category);
     }
+
+    [HttpPost("init-defaults")]
+    public async Task<IActionResult> InitializeDefaults()
+    {
+        var existingCount = await _db.Categories.CountDocumentsAsync(_ => true);
+        if (existingCount > 0)
+            return Ok(new { message = "Categories already exist" });
+
+        var defaultCategories = new[]
+        {
+            new Category { Name = "Software Development", Slug = "software-development" },
+            new Category { Name = "Data Science", Slug = "data-science" },
+            new Category { Name = "DevOps & Infrastructure", Slug = "devops-infrastructure" },
+            new Category { Name = "Mobile Development", Slug = "mobile-development" },
+            new Category { Name = "Full Stack", Slug = "full-stack" },
+            new Category { Name = "UI/UX Design", Slug = "uiux-design" },
+            new Category { Name = "Business & Management", Slug = "business-management" },
+            new Category { Name = "Marketing", Slug = "marketing" }
+        };
+
+        await _db.Categories.InsertManyAsync(defaultCategories);
+        return Ok(new { message = "Default categories initialized", count = defaultCategories.Length });
+    }
 }
