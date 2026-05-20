@@ -1,4 +1,6 @@
 using BreakThroughCV.API.Services;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
@@ -11,17 +13,26 @@ namespace BreakThroughCV.API.Controllers;
 [Authorize]
 public class CvController : ControllerBase
 {
-    private readonly CloudinaryService _cloudinary;
     private readonly MongoDbService _db;
+    private readonly IWebHostEnvironment _environment;
+    private readonly CloudinaryService _cloudinary;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public CvController(CloudinaryService cloudinary, MongoDbService db)
+    public CvController(MongoDbService db, IWebHostEnvironment environment, CloudinaryService cloudinary, IHttpClientFactory httpClientFactory)
     {
-        _cloudinary = cloudinary;
         _db = db;
+        _environment = environment;
+        _cloudinary = cloudinary;
+        _httpClientFactory = httpClientFactory;
     }
 
     private string GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
     private string GetRole() => User.FindFirst("role")?.Value ?? "none";
+
+    private string GetCvPublicUrl(string userId)
+    {
+        return $"{Request.Scheme}://{Request.Host}/api/cv/file/{userId}";
+    }
 
     [HttpPost("upload")]
     public async Task<IActionResult> UploadCv(IFormFile? cvFile)
@@ -37,13 +48,13 @@ public class CvController : ControllerBase
 
         try
         {
-            var url = await _cloudinary.UploadFileAsync(cvFile, "cvs");
-            if (url == null)
-                return StatusCode(500, new { message = "Failed to upload CV" });
+            // Upload raw file to Cloudinary (do not persist locally)
+            var uploadedUrl = await _cloudinary.UploadFileAsync(cvFile, "cvs");
+            if (uploadedUrl == null)
+                return StatusCode(500, new { message = "Failed to upload to storage provider" });
 
-            // Save CV URL to user
             var userId = GetUserId();
-            var update = Builders<Models.User>.Update.Set(u => u.CvUrl, url);
+            var update = Builders<Models.User>.Update.Set(u => u.CvUrl, uploadedUrl);
             var result = await _db.Users.UpdateOneAsync(u => u.Id == userId, update);
 
             if (result.ModifiedCount == 0)
@@ -52,12 +63,75 @@ public class CvController : ControllerBase
             return Ok(new
             {
                 message = "CV uploaded successfully",
-                cvUrl = url
+                cvUrl = uploadedUrl
             });
         }
         catch (Exception ex)
         {
             return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
+    [HttpGet("file/{userId}")]
+    [AllowAnonymous]
+    public async Task GetCvFile(string userId)
+    {
+        // Proxy the CV URL stored in user profile and stream it back to the client.
+        var user = await _db.Users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+        if (user == null || string.IsNullOrEmpty(user.CvUrl))
+        {
+            Response.StatusCode = 404;
+            await Response.WriteAsJsonAsync(new { message = "CV file not found" });
+            return;
+        }
+
+        var targetUrl = user.CvUrl;
+        var client = _httpClientFactory.CreateClient();
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, targetUrl);
+
+            // Forward Range header if present (for partial requests)
+            if (Request.Headers.ContainsKey("Range"))
+            {
+                var range = Request.Headers["Range"].ToString();
+                request.Headers.TryAddWithoutValidation("Range", range);
+            }
+
+            var resp = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
+            Response.StatusCode = (int)resp.StatusCode;
+
+            // Copy selected headers
+            if (resp.Content.Headers.ContentType != null)
+                Response.ContentType = resp.Content.Headers.ContentType.ToString();
+
+            if (resp.Headers.TryGetValues("Accept-Ranges", out var acceptRanges))
+                Response.Headers["Accept-Ranges"] = acceptRanges.ToArray();
+
+            if (resp.Content.Headers.ContentLength.HasValue)
+                Response.ContentLength = resp.Content.Headers.ContentLength.Value;
+
+            if (resp.Content.Headers.ContentRange != null)
+                Response.Headers["Content-Range"] = resp.Content.Headers.ContentRange.ToString();
+
+            foreach (var header in resp.Content.Headers)
+            {
+                // avoid overwriting content-type which was already set
+                if (string.Equals(header.Key, "Content-Type", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                Response.Headers[header.Key] = header.Value.ToArray();
+            }
+
+            // Stream content directly
+            await resp.Content.CopyToAsync(Response.Body);
+        }
+        catch (HttpRequestException ex)
+        {
+            Response.StatusCode = 502;
+            await Response.WriteAsJsonAsync(new { message = "Failed to fetch remote CV file", error = ex.Message });
         }
     }
 
@@ -74,7 +148,8 @@ public class CvController : ControllerBase
 
             return Ok(new
             {
-                cvUrl = user.CvUrl,
+                cvUrl = string.IsNullOrEmpty(user.CvUrl) ? null : GetCvPublicUrl(userId),
+                rawCvUrl = string.IsNullOrEmpty(user.CvUrl) ? null : user.CvUrl,
                 hasCV = !string.IsNullOrEmpty(user.CvUrl)
             });
         }
@@ -97,7 +172,8 @@ public class CvController : ControllerBase
 
             return Ok(new
             {
-                cvUrl = user.CvUrl
+                cvUrl = GetCvPublicUrl(userId),
+                rawCvUrl = user.CvUrl
             });
         }
         catch (Exception ex)
@@ -112,7 +188,7 @@ public class CvController : ControllerBase
         try
         {
             var userId = GetUserId();
-            
+
             var update = Builders<Models.User>.Update.Set(u => u.CvUrl, null);
             var result = await _db.Users.UpdateOneAsync(u => u.Id == userId, update);
 
@@ -127,4 +203,3 @@ public class CvController : ControllerBase
         }
     }
 }
-

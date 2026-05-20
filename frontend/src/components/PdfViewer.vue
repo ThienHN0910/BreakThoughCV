@@ -57,11 +57,12 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, nextTick } from 'vue'
 import * as pdfjsLib from 'pdfjs-dist'
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
 // Set up PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc
 
 const props = defineProps({
   pdfUrl: {
@@ -84,7 +85,6 @@ let pdfDoc = null
 const renderPage = async () => {
   if (!pdfDoc) return
 
-  loading.value = true
   error.value = null
 
   try {
@@ -95,8 +95,17 @@ const renderPage = async () => {
     const page = await pdfDoc.getPage(currentPage.value)
     const viewport = page.getViewport({ scale: 1.5 })
 
+    await nextTick()
+
     const canvas = pdfCanvas.value
+    if (!canvas) {
+      throw new Error('PDF canvas is not ready yet')
+    }
+
     const context = canvas.getContext('2d')
+    if (!context) {
+      throw new Error('Unable to create PDF canvas context')
+    }
 
     canvas.width = viewport.width
     canvas.height = viewport.height
@@ -108,8 +117,6 @@ const renderPage = async () => {
   } catch (err) {
     error.value = `Failed to render page: ${err.message}`
     console.error(err)
-  } finally {
-    loading.value = false
   }
 }
 
@@ -126,6 +133,7 @@ const loadPdf = async () => {
     pdfDoc = await pdfjsLib.getDocument(props.pdfUrl).promise
     totalPages.value = pdfDoc.numPages
     currentPage.value = 1
+    loading.value = false
     await renderPage()
   } catch (err) {
     error.value = `Failed to load PDF: ${err.message}`

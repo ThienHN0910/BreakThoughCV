@@ -57,7 +57,13 @@
 
 ### 3.2 CV management
 - Frontend page: `/candidate/cv`
-- API: `POST /api/cv/upload` (multipart/form-data)
+- APIs:
+- `POST /api/cv/upload` (multipart/form-data)
+- `GET /api/cv/my`
+- `GET /api/cv/file/{userId}` (anonymous, PDF stream for preview)
+- Behavior:
+- Uploaded CV is saved on the backend and the saved URL points to the backend file endpoint
+- PDF.js preview reads from the backend file URL, so no Cloudinary raw access is needed for preview
 
 ### 3.3 AI review and suggestions
 - Frontend page: `/candidate/ai-review`
@@ -99,4 +105,3 @@
 6. Candidate can call candidate-only endpoints.
 7. Public endpoints (`/jobs`, `/categories`) are reachable without auth.
 8. Frontend handles `401` by clearing session and redirecting to `/login`.
-
