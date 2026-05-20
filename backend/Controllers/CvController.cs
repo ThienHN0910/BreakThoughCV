@@ -204,6 +204,24 @@ public class CvController : ControllerBase
         {
             var userId = GetUserId();
 
+            // Attempt to delete remote file from provider if present
+            var user = await _db.Users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+            if (user == null) return NotFound(new { message = "User not found" });
+
+            if (!string.IsNullOrEmpty(user.CvUrl))
+            {
+                try
+                {
+                    var deleted = await _cloudinary.DeleteFileByUrlAsync(user.CvUrl);
+                    if (!deleted)
+                        _cloudinary.GetType(); // no-op to keep compiler happy; fallback: just log (logger in service already logs)
+                }
+                catch
+                {
+                    // ignore provider delete failures; proceed to clear DB reference
+                }
+            }
+
             var update = Builders<Models.User>.Update.Set(u => u.CvUrl, null);
             var result = await _db.Users.UpdateOneAsync(u => u.Id == userId, update);
 
