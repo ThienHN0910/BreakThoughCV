@@ -15,11 +15,17 @@ public class ApplicationController : ControllerBase
 {
     private readonly MongoDbService _db;
     private readonly CloudinaryService _cloudinary;
+    private readonly PdfTextService _pdfTextService;
+    private readonly GeminiService _gemini;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public ApplicationController(MongoDbService db, CloudinaryService cloudinary)
+    public ApplicationController(MongoDbService db, CloudinaryService cloudinary, PdfTextService pdfTextService, GeminiService gemini, IHttpClientFactory httpClientFactory)
     {
         _db = db;
         _cloudinary = cloudinary;
+        _pdfTextService = pdfTextService;
+        _gemini = gemini;
+        _httpClientFactory = httpClientFactory;
     }
 
     private string GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
@@ -38,6 +44,22 @@ public class ApplicationController : ControllerBase
         ).FirstOrDefaultAsync();
         if (existing != null) return Conflict(new { message = "You have already applied to this job" });
 
+        // Extract text from uploaded CV for AI features
+        string? extractedText = null;
+        try
+        {
+            if (cvFile != null)
+            {
+                await using var s = cvFile.OpenReadStream();
+                extractedText = await _pdfTextService.ExtractTextAsync(s);
+            }
+        }
+        catch
+        {
+            // non-fatal: continue without extracted text
+            extractedText = null;
+        }
+
         var cvUrl = await _cloudinary.UploadFileAsync(cvFile, "cvs");
         if (cvUrl == null) return StatusCode(500, new { message = "Failed to upload CV" });
 
@@ -46,6 +68,7 @@ public class ApplicationController : ControllerBase
             JobId = request.JobId,
             CandidateId = candidateId,
             CvUrl = cvUrl,
+            CvText = extractedText,
             AppliedAt = DateTime.UtcNow,
             Status = "Pending"
         };
@@ -103,6 +126,48 @@ public class ApplicationController : ControllerBase
         var update = Builders<Application>.Update.Set(a => a.Status, request.Status);
         await _db.Applications.UpdateOneAsync(a => a.Id == id, update);
         return NoContent();
+    }
+
+    [HttpPost("{id}/ai-review")]
+    public async Task<IActionResult> ReviewApplicationByAi(string id)
+    {
+        if (GetRole() != "recruiter") return Forbid();
+
+        var application = await _db.Applications.Find(a => a.Id == id).FirstOrDefaultAsync();
+        if (application == null) return NotFound();
+
+        // verify recruiter owns the company for this job
+        var recruiterId = GetUserId();
+        var job = await _db.Jobs.Find(j => j.Id == application.JobId).FirstOrDefaultAsync();
+        if (job == null) return NotFound();
+        var company = await _db.Companies.Find(c => c.Id == job.CompanyId && c.RecruiterId == recruiterId).FirstOrDefaultAsync();
+        if (company == null) return Forbid();
+
+        string? cvText = application.CvText;
+        if (string.IsNullOrWhiteSpace(cvText) && !string.IsNullOrWhiteSpace(application.CvUrl))
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                using var resp = await client.GetAsync(application.CvUrl);
+                if (resp.IsSuccessStatusCode)
+                {
+                    await using var stream = await resp.Content.ReadAsStreamAsync();
+                    cvText = await _pdfTextService.ExtractTextAsync(stream);
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(cvText))
+            return BadRequest(new { message = "CV text not available for AI review" });
+
+        var reviewResult = await _gemini.ReviewCvAsync(cvText, job);
+        if (reviewResult == null) return StatusCode(503, new { message = "AI service unavailable" });
+
+        return Ok(reviewResult);
     }
 
     private async Task<List<ApplicationResponse>> EnrichApplicationsAsync(List<Application> applications)

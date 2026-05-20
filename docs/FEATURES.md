@@ -65,12 +65,20 @@
 - Uploaded CV is saved on the backend and the saved URL points to the backend file endpoint
 - PDF.js preview reads from the backend file URL, so no Cloudinary raw access is needed for preview
 
+Additional details:
+- The backend extracts text from uploaded PDF using `UglyToad.PdfPig` and stores extracted text with the application when the candidate applies. This text is used by AI features and eliminates the need for the frontend to send raw text.
+- AI endpoints accept either raw `cvText` or a `cvUrl` (the backend will fetch and extract text if `cvText` is not provided).
+
 ### 3.3 AI review and suggestions
 - Frontend page: `/candidate/ai-review`
 - APIs:
 - `POST /api/ai/suggest-jobs`
 - `POST /api/ai/review-cv`
 - `GET /api/ai/review-history`
+
+Notes:
+- The `POST /api/ai/*` endpoints accept `{ cvText }` or `{ cvUrl }`. If `cvUrl` is provided the server will fetch and extract text for analysis.
+- Recruiters can trigger AI review for a specific application using: `POST /api/applications/{applicationId}/ai-review` (recruiter-only). This returns the same structured CV review used for candidate reviews.
 
 ### 3.4 Candidate applications
 - API:

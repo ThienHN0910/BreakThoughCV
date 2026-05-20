@@ -25,7 +25,7 @@ const loadMyCv = async () => {
 
 const loadJobs = async () => {
   try {
-    const { data } = await api.get('/jobs/public')
+    const { data } = await api.get('/jobs?page=1&pageSize=100')
     jobs.value = data.data || []
   } catch (e) {
     console.error('Failed to load jobs:', e)

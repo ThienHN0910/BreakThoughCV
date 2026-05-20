@@ -60,6 +60,36 @@ public class JobController : ControllerBase
         return Ok(new { totalCount, page, pageSize, data = jobResponses });
     }
 
+    [HttpGet("public")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPublicJobs()
+    {
+        // return a larger public list for frontend widgets
+        var filter = Builders<Job>.Filter.Empty;
+        var jobs = await _db.Jobs.Find(filter)
+            .SortByDescending(j => j.CreatedAt)
+            .Limit(100)
+            .ToListAsync();
+
+        var jobResponses = await EnrichJobsAsync(jobs);
+        return Ok(new { totalCount = jobResponses.Count, page = 1, pageSize = 100, data = jobResponses });
+    }
+
+    [HttpGet("public")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPublicJobs()
+    {
+        // return a larger public list for frontend widgets
+        var filter = Builders<Job>.Filter.Empty;
+        var jobs = await _db.Jobs.Find(filter)
+            .SortByDescending(j => j.CreatedAt)
+            .Limit(100)
+            .ToListAsync();
+
+        var jobResponses = await EnrichJobsAsync(jobs);
+        return Ok(new { totalCount = jobResponses.Count, page = 1, pageSize = 100, data = jobResponses });
+    }
+
     [HttpGet("{id}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetById(string id)

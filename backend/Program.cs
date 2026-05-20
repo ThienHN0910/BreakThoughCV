@@ -19,6 +19,8 @@ builder.Services.AddSingleton<CloudinaryService>();
 builder.Services.AddSingleton<JwtService>();
 builder.Services.AddSingleton<GoogleAuthService>();
 builder.Services.AddHttpClient<GeminiService>();
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<PdfTextService>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()

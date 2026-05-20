@@ -20,6 +20,9 @@ public class Application
     [BsonElement("cvUrl")]
     public string CvUrl { get; set; } = string.Empty;
 
+    [BsonElement("cvText")]
+    public string? CvText { get; set; }
+
     [BsonElement("appliedAt")]
     public DateTime AppliedAt { get; set; } = DateTime.UtcNow;
 

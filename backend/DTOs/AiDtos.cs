@@ -1,10 +1,10 @@
 namespace BreakThroughCV.API.DTOs;
 
-public record JobSuggestionRequest(string CvText);
+public record JobSuggestionRequest(string? CvText, string? CvUrl);
 
 public record JobSuggestionResult(string JobId, string Reason);
 
-public record CvReviewRequest(string JobId, string CvText);
+public record CvReviewRequest(string JobId, string? CvText, string? CvUrl);
 
 public record CvReviewResponse(
     string Id,

@@ -15,11 +15,15 @@ public class AIController : ControllerBase
 {
     private readonly MongoDbService _db;
     private readonly GeminiService _gemini;
+    private readonly PdfTextService _pdfTextService;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public AIController(MongoDbService db, GeminiService gemini)
+    public AIController(MongoDbService db, GeminiService gemini, PdfTextService pdfTextService, IHttpClientFactory httpClientFactory)
     {
         _db = db;
         _gemini = gemini;
+        _pdfTextService = pdfTextService;
+        _httpClientFactory = httpClientFactory;
     }
 
     private string GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
@@ -29,13 +33,33 @@ public class AIController : ControllerBase
     public async Task<IActionResult> SuggestJobs([FromBody] JobSuggestionRequest request)
     {
         if (!IsCandidate()) return Forbid();
-        if (string.IsNullOrWhiteSpace(request.CvText))
-            return BadRequest(new { message = "CV text is required" });
+        string? cvText = request.CvText;
+        if (string.IsNullOrWhiteSpace(cvText) && !string.IsNullOrWhiteSpace(request.CvUrl))
+        {
+            // fetch URL and extract text
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                using var resp = await client.GetAsync(request.CvUrl);
+                if (resp.IsSuccessStatusCode)
+                {
+                    await using var stream = await resp.Content.ReadAsStreamAsync();
+                    cvText = await _pdfTextService.ExtractTextAsync(stream);
+                }
+            }
+            catch
+            {
+                // ignore and let cvText remain null
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(cvText))
+            return BadRequest(new { message = "CV text is required (provide cvText or cvUrl)" });
 
         var jobs = await _db.Jobs.Find(_ => true).Limit(50).ToListAsync();
         if (jobs.Count == 0) return Ok(new { suggestions = new List<object>() });
 
-        var suggestions = await _gemini.SuggestJobsAsync(request.CvText, jobs);
+        var suggestions = await _gemini.SuggestJobsAsync(cvText, jobs);
         if (suggestions == null) return StatusCode(503, new { message = "AI service unavailable" });
 
         return Ok(new { suggestions });
@@ -45,14 +69,32 @@ public class AIController : ControllerBase
     public async Task<IActionResult> ReviewCv([FromBody] CvReviewRequest request)
     {
         if (!IsCandidate()) return Forbid();
-        if (string.IsNullOrWhiteSpace(request.CvText))
-            return BadRequest(new { message = "CV text is required" });
+        string? cvText = request.CvText;
+        if (string.IsNullOrWhiteSpace(cvText) && !string.IsNullOrWhiteSpace(request.CvUrl))
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                using var resp = await client.GetAsync(request.CvUrl);
+                if (resp.IsSuccessStatusCode)
+                {
+                    await using var stream = await resp.Content.ReadAsStreamAsync();
+                    cvText = await _pdfTextService.ExtractTextAsync(stream);
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(cvText))
+            return BadRequest(new { message = "CV text is required (provide cvText or cvUrl)" });
 
         var job = await _db.Jobs.Find(j => j.Id == request.JobId).FirstOrDefaultAsync();
         if (job == null) return NotFound(new { message = "Job not found" });
 
         var candidateId = GetUserId();
-        var reviewResult = await _gemini.ReviewCvAsync(request.CvText, job);
+        var reviewResult = await _gemini.ReviewCvAsync(cvText, job);
         if (reviewResult == null) return StatusCode(503, new { message = "AI service unavailable" });
 
         var cvReview = new CvReview
