@@ -18,6 +18,9 @@ public class User
     [BsonElement("avatarUrl")]
     public string? AvatarUrl { get; set; }
 
+    [BsonElement("cvUrl")]
+    public string? CvUrl { get; set; }
+
     [BsonElement("role")]
     public string Role { get; set; } = "none"; // "none" | "candidate" | "recruiter"
 

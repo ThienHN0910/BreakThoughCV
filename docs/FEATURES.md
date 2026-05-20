@@ -99,3 +99,4 @@
 6. Candidate can call candidate-only endpoints.
 7. Public endpoints (`/jobs`, `/categories`) are reachable without auth.
 8. Frontend handles `401` by clearing session and redirecting to `/login`.
+
