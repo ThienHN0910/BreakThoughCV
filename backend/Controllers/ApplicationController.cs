@@ -31,6 +31,72 @@ public class ApplicationController : ControllerBase
     private string GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
     private string GetRole() => User.FindFirst("role")?.Value ?? "none";
 
+    private async Task<(string? CvUrl, string? CvText, string? ErrorMessage)> CopyMyCvToApplicationAsync(string candidateId)
+    {
+        var user = await _db.Users.Find(u => u.Id == candidateId).FirstOrDefaultAsync();
+        if (user == null) return (null, null, "User not found");
+        if (string.IsNullOrWhiteSpace(user.CvUrl)) return (null, null, "Please upload your CV first");
+
+        // Download candidate CV
+        MemoryStream? ms = null;
+        try
+        {
+            var client = _httpClientFactory.CreateClient();
+            using var resp = await client.GetAsync(user.CvUrl, HttpCompletionOption.ResponseHeadersRead);
+            if (resp.IsSuccessStatusCode)
+            {
+                await using var s = await resp.Content.ReadAsStreamAsync();
+                ms = new MemoryStream();
+                await s.CopyToAsync(ms);
+            }
+        }
+        catch
+        {
+            ms = null;
+        }
+
+        // If direct download failed and it's Cloudinary, attempt admin download
+        if (ms == null && user.CvUrl.Contains("res.cloudinary.com", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var cloudStream = await _cloudinary.DownloadFileAsync(user.CvUrl);
+                if (cloudStream != null)
+                {
+                    ms = new MemoryStream();
+                    await cloudStream.CopyToAsync(ms);
+                    await cloudStream.DisposeAsync();
+                }
+            }
+            catch
+            {
+                ms = null;
+            }
+        }
+
+        if (ms == null) return (null, null, "Failed to read your CV file");
+
+        // Extract text (best-effort)
+        string? extractedText = null;
+        try
+        {
+            ms.Position = 0;
+            extractedText = await _pdfTextService.ExtractTextAsync(ms);
+        }
+        catch
+        {
+            extractedText = null;
+        }
+
+        // Upload a per-application copy so the application remains valid even if user replaces/deletes their profile CV
+        ms.Position = 0;
+        var cvUrl = await _cloudinary.UploadFileStreamAsync(ms, $"cv-{candidateId}-{DateTime.UtcNow:yyyyMMddHHmmss}.pdf", "cvs");
+        await ms.DisposeAsync();
+
+        if (cvUrl == null) return (null, null, "Failed to upload CV");
+        return (cvUrl, extractedText, null);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Apply([FromForm] ApplyJobRequest request, IFormFile cvFile)
     {
@@ -77,6 +143,37 @@ public class ApplicationController : ControllerBase
         return CreatedAtAction(nameof(GetMyApplications), application);
     }
 
+    [HttpPost("quick")]
+    public async Task<IActionResult> QuickApply([FromBody] ApplyJobRequest request)
+    {
+        if (GetRole() != "candidate") return Forbid();
+        var candidateId = GetUserId();
+
+        var existing = await _db.Applications.Find(
+            a => a.JobId == request.JobId && a.CandidateId == candidateId
+        ).FirstOrDefaultAsync();
+        if (existing != null) return Conflict(new { message = "You have already applied to this job" });
+
+        var job = await _db.Jobs.Find(j => j.Id == request.JobId).FirstOrDefaultAsync();
+        if (job == null) return NotFound(new { message = "Job not found" });
+
+        var (cvUrl, cvText, errorMessage) = await CopyMyCvToApplicationAsync(candidateId);
+        if (!string.IsNullOrWhiteSpace(errorMessage)) return BadRequest(new { message = errorMessage });
+
+        var application = new Application
+        {
+            JobId = request.JobId,
+            CandidateId = candidateId,
+            CvUrl = cvUrl!,
+            CvText = cvText,
+            AppliedAt = DateTime.UtcNow,
+            Status = "Pending"
+        };
+
+        await _db.Applications.InsertOneAsync(application);
+        return CreatedAtAction(nameof(GetMyApplications), application);
+    }
+
     [HttpGet("my")]
     public async Task<IActionResult> GetMyApplications()
     {
@@ -105,6 +202,100 @@ public class ApplicationController : ControllerBase
 
         var enriched = await EnrichApplicationsAsync(applications);
         return Ok(enriched);
+    }
+
+    [HttpGet("{id}/cv-file")]
+    public async Task<IActionResult> GetApplicationCvFile(string id)
+    {
+        if (GetRole() != "recruiter") return Forbid();
+
+        var recruiterId = GetUserId();
+        var application = await _db.Applications.Find(a => a.Id == id).FirstOrDefaultAsync();
+        if (application == null) return NotFound(new { message = "Application not found" });
+
+        var company = await _db.Companies.Find(c => c.RecruiterId == recruiterId).FirstOrDefaultAsync();
+        if (company == null) return Forbid();
+
+        var job = await _db.Jobs.Find(j => j.Id == application.JobId && j.CompanyId == company.Id).FirstOrDefaultAsync();
+        if (job == null) return Forbid();
+
+        if (string.IsNullOrWhiteSpace(application.CvUrl))
+            return NotFound(new { message = "CV not found" });
+
+        // Download CV bytes (best-effort)
+        byte[]? bytes = null;
+        string contentType = "application/pdf";
+
+        try
+        {
+            var client = _httpClientFactory.CreateClient();
+            using var resp = await client.GetAsync(application.CvUrl, HttpCompletionOption.ResponseHeadersRead);
+            if (resp.IsSuccessStatusCode)
+            {
+                if (resp.Content.Headers.ContentType?.MediaType != null)
+                    contentType = resp.Content.Headers.ContentType.MediaType;
+
+                bytes = await resp.Content.ReadAsByteArrayAsync();
+            }
+        }
+        catch
+        {
+            bytes = null;
+        }
+
+        if (bytes == null && application.CvUrl.Contains("res.cloudinary.com", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var stream = await _cloudinary.DownloadFileAsync(application.CvUrl);
+                if (stream != null)
+                {
+                    await using (stream)
+                    {
+                        using var ms = new MemoryStream();
+                        await stream.CopyToAsync(ms);
+                        bytes = ms.ToArray();
+                    }
+                }
+            }
+            catch
+            {
+                bytes = null;
+            }
+        }
+
+        if (bytes == null) return StatusCode(502, new { message = "Failed to fetch CV file" });
+
+        return File(bytes, contentType);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> CancelMyApplication(string id)
+    {
+        if (GetRole() != "candidate") return Forbid();
+        var candidateId = GetUserId();
+
+        var application = await _db.Applications
+            .Find(a => a.Id == id && a.CandidateId == candidateId)
+            .FirstOrDefaultAsync();
+        if (application == null) return NotFound(new { message = "Application not found" });
+
+        // Best-effort: delete per-application CV copy (ignore failures)
+        if (!string.IsNullOrWhiteSpace(application.CvUrl))
+        {
+            try
+            {
+                await _cloudinary.DeleteFileByUrlAsync(application.CvUrl);
+            }
+            catch
+            {
+            }
+        }
+
+        await _db.CvReviews.DeleteManyAsync(r => r.ApplicationId == id && r.CandidateId == candidateId);
+        await _db.Applications.DeleteOneAsync(a => a.Id == id && a.CandidateId == candidateId);
+
+        return NoContent();
     }
 
     [HttpPut("{id}/status")]

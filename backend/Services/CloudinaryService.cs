@@ -168,4 +168,28 @@ public class CloudinaryService
             return null;
         }
     }
+
+    public async Task<string?> UploadFileStreamAsync(Stream stream, string fileName, string folder = "cvs")
+    {
+        try
+        {
+            var uploadParams = new RawUploadParams
+            {
+                File = new FileDescription(fileName, stream),
+                Folder = folder
+            };
+            var result = await _cloudinary.UploadAsync(uploadParams);
+            if (result.Error != null)
+            {
+                _logger.LogError("Cloudinary upload error: {Error}", result.Error.Message);
+                return null;
+            }
+            return result.SecureUrl?.ToString();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to upload stream to Cloudinary");
+            return null;
+        }
+    }
 }

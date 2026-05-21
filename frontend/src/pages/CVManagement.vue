@@ -10,6 +10,11 @@ const error = ref('')
 const loading = ref(false)
 const hasCv = ref(false)
 
+function onCvFileSelected(e) {
+  cvFile.value = e?.target?.files?.[0] || null
+  error.value = ''
+}
+
 const loadMyCv = async () => {
   try {
     const { data } = await api.get('/cv/my')
@@ -26,25 +31,26 @@ async function uploadCv() {
     return
   }
 
-  if (cvFile.value.type !== 'application/pdf') {
+  const fileName = (cvFile.value.name || '').toLowerCase()
+  const isPdfByName = fileName.endsWith('.pdf')
+  const isPdfByType = !cvFile.value.type || cvFile.value.type === 'application/pdf'
+  if (!isPdfByName || !isPdfByType) {
     error.value = 'Only PDF files are allowed'
     return
   }
 
-  if (cvFile.value.size > 5 * 1024 * 1024) {
-    error.value = 'File size must be less than 5MB'
+  if (cvFile.value.size > 10 * 1024 * 1024) {
+    error.value = 'File size must be less than 10MB'
     return
   }
 
   const formData = new FormData()
-  formData.append('cvFile', cvFile.value)
+  formData.append('cvFile', cvFile.value, cvFile.value.name)
 
   try {
     loading.value = true
     error.value = ''
-    const { data } = await api.post('/cv/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    const { data } = await api.post('/cv/upload', formData)
     cvUrl.value = data.cvUrl
     hasCv.value = true
     cvFile.value = null
@@ -97,7 +103,7 @@ onMounted(() => {
           <input
             type="file"
             accept=".pdf"
-            @change="(e) => (cvFile = e.target.files?.[0] || null)"
+            @change="onCvFileSelected"
             class="hidden"
             id="cv-file-input"
           />

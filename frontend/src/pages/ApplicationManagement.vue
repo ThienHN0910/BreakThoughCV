@@ -1,12 +1,56 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import AppLayout from '../layouts/AppLayout.vue'
+import PdfViewer from '../components/PdfViewer.vue'
 import api from '../services/api'
 
 const jobs = ref([])
 const selectedJobId = ref('')
 const applications = ref([])
 const error = ref('')
+
+const openCvApplicationId = ref('')
+const cvBlobUrl = ref('')
+const cvLoading = ref(false)
+const cvError = ref('')
+
+function closeCvViewer() {
+  openCvApplicationId.value = ''
+  cvError.value = ''
+
+  if (cvBlobUrl.value) {
+    try {
+      URL.revokeObjectURL(cvBlobUrl.value)
+    } catch {
+    }
+  }
+  cvBlobUrl.value = ''
+}
+
+async function toggleCvViewer(item) {
+  if (!item?.id) return
+
+  if (openCvApplicationId.value === item.id) {
+    closeCvViewer()
+    return
+  }
+
+  closeCvViewer()
+  openCvApplicationId.value = item.id
+  cvLoading.value = true
+  cvError.value = ''
+
+  try {
+    const resp = await api.get(`/applications/${item.id}/cv-file`, { responseType: 'blob' })
+    const blob = resp.data
+    cvBlobUrl.value = URL.createObjectURL(blob)
+  } catch (e) {
+    cvError.value = e?.response?.data?.message || 'Không tải được CV'
+    openCvApplicationId.value = ''
+  } finally {
+    cvLoading.value = false
+  }
+}
 
 async function loadJobs() {
   const company = await api.get('/companies/my')
@@ -20,6 +64,7 @@ async function loadApplications() {
   try {
     const { data } = await api.get(`/applications/job/${selectedJobId.value}`)
     applications.value = data
+    closeCvViewer()
   } catch (e) {
     error.value = e?.response?.data?.message || 'Không tải được ứng viên'
   }
@@ -54,7 +99,18 @@ onMounted(async () => {
       <div v-for="item in applications" :key="item.id" class="btc-card">
         <h3 class="font-semibold">{{ item.candidateName }}</h3>
         <p class="text-sm text-slate-600">{{ item.candidateEmail }}</p>
-        <a :href="item.cvUrl" target="_blank" class="text-blue-600 text-sm">Xem CV</a>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+          <button class="btc-btn-secondary" @click="toggleCvViewer(item)">
+            {{ openCvApplicationId === item.id ? 'Đóng CV' : 'Xem CV' }}
+          </button>
+          <a v-if="item.cvUrl" :href="item.cvUrl" target="_blank" class="text-blue-600 text-sm">Mở tab mới</a>
+        </div>
+
+        <div v-if="openCvApplicationId === item.id" class="mt-3">
+          <p v-if="cvError" class="text-sm text-rose-600 mb-2">{{ cvError }}</p>
+          <p v-if="cvLoading" class="text-sm">Đang tải CV...</p>
+          <PdfViewer v-else :pdfUrl="cvBlobUrl" />
+        </div>
         <div class="mt-2 flex items-center gap-2">
           <span class="text-sm">Trạng thái: {{ item.status }}</span>
           <button class="btc-btn-secondary px-2.5 py-1 text-xs" @click="updateStatus(item, 'Pending')">Pending</button>

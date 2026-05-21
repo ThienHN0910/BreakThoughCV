@@ -63,7 +63,9 @@ public class CvController : ControllerBase
             return Ok(new
             {
                 message = "CV uploaded successfully",
-                cvUrl = uploadedUrl
+                cvUrl = GetCvPublicUrl(userId),
+                rawCvUrl = uploadedUrl,
+                hasCV = true
             });
         }
         catch (Exception ex)

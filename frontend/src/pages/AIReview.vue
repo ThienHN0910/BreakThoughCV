@@ -1,9 +1,12 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import AppLayout from '../layouts/AppLayout.vue'
 import PdfViewer from '../components/PdfViewer.vue'
 import CircleScore from '../components/CircleScore.vue'
 import api from '../services/api'
+import { useAuthStore } from '../stores/auth'
+
+const auth = useAuthStore()
 
 const cvUrl = ref('')
 const jobs = ref([])
@@ -13,6 +16,129 @@ const review = ref(null)
 const loading = ref(false)
 const error = ref('')
 const suggestions = ref([])
+const lastReviewedJobId = ref('')
+
+const applications = ref([])
+const applicationsLoading = ref(false)
+const applicationsError = ref('')
+const cancelingApplicationIds = ref(new Set())
+
+function formatDate(value) {
+  try {
+    return new Date(value).toLocaleString()
+  } catch {
+    return value
+  }
+}
+
+const loadMyApplications = async () => {
+  try {
+    applicationsLoading.value = true
+    applicationsError.value = ''
+    const { data } = await api.get('/applications/my')
+    applications.value = data || []
+  } catch (e) {
+    applicationsError.value = e?.response?.data?.message || 'Không tải được danh sách việc đã apply'
+    applications.value = []
+  } finally {
+    applicationsLoading.value = false
+  }
+}
+
+const cancelApplication = async (app) => {
+  if (!app?.id) return
+
+  try {
+    applicationsError.value = ''
+    cancelingApplicationIds.value = new Set([...cancelingApplicationIds.value, app.id])
+    await api.delete(`/applications/${app.id}`)
+    await loadMyApplications()
+  } catch (e) {
+    applicationsError.value = e?.response?.data?.message || 'Không hủy được apply'
+  } finally {
+    const next = new Set(cancelingApplicationIds.value)
+    next.delete(app.id)
+    cancelingApplicationIds.value = next
+  }
+}
+
+const wantedJobIds = ref([])
+const applyingWantedJobIds = ref(new Set())
+const wantedActionError = ref('')
+
+function wantedStorageKey() {
+  const userId = auth.user?.userId || ''
+  return `aiReviewJobIds:${userId}`
+}
+
+function loadWantedJobIds() {
+  if (auth.role !== 'candidate') {
+    wantedJobIds.value = []
+    return
+  }
+
+  try {
+    const raw = localStorage.getItem(wantedStorageKey())
+    const parsed = raw ? JSON.parse(raw) : []
+    wantedJobIds.value = Array.isArray(parsed) ? parsed : []
+  } catch {
+    wantedJobIds.value = []
+  }
+}
+
+function persistWantedJobIds(nextIds) {
+  wantedJobIds.value = nextIds
+  try {
+    localStorage.setItem(wantedStorageKey(), JSON.stringify(nextIds))
+  } catch {
+  }
+}
+
+function removeWantedJob(jobId) {
+  const next = (wantedJobIds.value || []).filter(id => id !== jobId)
+  persistWantedJobIds(next)
+
+  if (selectedJobId.value === jobId) {
+    selectedJobId.value = ''
+    selectedJob.value = null
+  }
+}
+
+const applyWantedJob = async (job) => {
+  if (!job?.id) return
+
+  wantedActionError.value = ''
+
+  // Only allow applying after AI review for this exact job
+  if (!review.value || lastReviewedJobId.value !== job.id) {
+    wantedActionError.value = 'Hãy AI review job này trước khi apply.'
+    return
+  }
+
+  try {
+    applyingWantedJobIds.value = new Set([...applyingWantedJobIds.value, job.id])
+    await api.post('/applications/quick', { jobId: job.id })
+    removeWantedJob(job.id)
+    await loadMyApplications()
+  } catch (e) {
+    wantedActionError.value = e?.response?.data?.message || 'Apply thất bại'
+  } finally {
+    const next = new Set(applyingWantedJobIds.value)
+    next.delete(job.id)
+    applyingWantedJobIds.value = next
+  }
+}
+
+const wantedJobs = computed(() => {
+  if (!wantedJobIds.value.length) return []
+  const idSet = new Set(wantedJobIds.value)
+  return (jobs.value || []).filter(j => idSet.has(j.id))
+})
+
+function selectWantedJob(job) {
+  selectedJobId.value = job.id
+  onJobSelected()
+}
 
 const loadMyCv = async () => {
   try {
@@ -33,8 +159,12 @@ const loadJobs = async () => {
 }
 
 const onJobSelected = async () => {
-  const job = jobs.value.find(j => j._id === selectedJobId.value)
+  const job = jobs.value.find(j => j.id === selectedJobId.value)
   selectedJob.value = job || null
+
+  // prevent applying with stale review result
+  review.value = null
+  error.value = ''
 }
 
 const suggestJobs = async () => {
@@ -71,6 +201,7 @@ const reviewCv = async () => {
     error.value = ''
     const { data } = await api.post('/ai/review-cv', { jobId: selectedJobId.value, cvUrl: cvUrl.value })
     review.value = data
+    lastReviewedJobId.value = selectedJobId.value
   } catch (e) {
     error.value = e?.response?.data?.message || 'Unable to review CV'
   } finally {
@@ -81,6 +212,8 @@ const reviewCv = async () => {
 onMounted(() => {
   loadMyCv()
   loadJobs()
+  loadMyApplications()
+  loadWantedJobIds()
 })
 </script>
 
@@ -89,13 +222,80 @@ onMounted(() => {
     <h2 class="btc-page-title">AI Review CV theo JD</h2>
     <p class="btc-page-subtitle">Upload CV để nhận gợi ý chỉnh sửa và điểm phù hợp với vị trí ứng tuyển.</p>
 
+    <!-- Wanted Jobs (AI review first) -->
+    <div class="btc-card max-w-4xl mb-6">
+      <h3 class="text-lg font-semibold mb-4">Việc bạn muốn apply (AI review trước)</h3>
+      <p v-if="wantedActionError" class="text-sm text-rose-600 mb-3">{{ wantedActionError }}</p>
+      <p v-if="!wantedJobIds.length" class="text-sm text-slate-600">Chưa thêm job nào từ trang Việc làm.</p>
+      <div v-else>
+        <p v-if="!wantedJobs.length" class="text-sm text-slate-600">Đang tải danh sách job...</p>
+        <div v-else class="space-y-3">
+          <div v-for="j in wantedJobs" :key="j.id" class="border border-slate-200 rounded-lg p-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p class="font-semibold">{{ j.title }}</p>
+                <p class="text-sm text-slate-600">{{ j.companyName }} • {{ j.categoryName || 'Chưa phân loại' }}</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button class="btc-btn-secondary" @click="selectWantedJob(j)">Review job này</button>
+                <button
+                  class="btc-btn-primary"
+                  :disabled="!review || lastReviewedJobId !== j.id || applyingWantedJobIds.has(j.id)"
+                  @click="applyWantedJob(j)"
+                >
+                  {{ applyingWantedJobIds.has(j.id) ? 'Đang apply...' : 'Apply' }}
+                </button>
+                <button class="btc-btn-secondary border-rose-200 text-rose-700" @click="removeWantedJob(j.id)">Hủy</button>
+              </div>
+            </div>
+            <p v-if="lastReviewedJobId !== j.id" class="text-xs text-slate-600 mt-2">(Cần review job này trước khi apply)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Applied Jobs List -->
+    <div class="btc-card max-w-4xl mb-6">
+      <h3 class="text-lg font-semibold mb-4">Việc bạn đã apply</h3>
+      <p v-if="applicationsError" class="text-sm text-rose-600 mb-3">{{ applicationsError }}</p>
+      <p v-if="applicationsLoading" class="text-sm">Đang tải...</p>
+      <div v-else>
+        <p v-if="!applications.length" class="text-sm text-slate-600">Chưa có job nào được apply.</p>
+        <div v-else class="space-y-3">
+          <div v-for="a in applications" :key="a.id" class="border border-slate-200 rounded-lg p-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p class="font-semibold">{{ a.jobTitle }}</p>
+                <p class="text-sm text-slate-600">Apply lúc: {{ formatDate(a.appliedAt) }}</p>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="text-sm">
+                  Trạng thái: <span class="font-medium">{{ a.status }}</span>
+                </div>
+                <button
+                  class="btc-btn-secondary border-rose-200 text-rose-700"
+                  :disabled="cancelingApplicationIds.has(a.id)"
+                  @click="cancelApplication(a)"
+                >
+                  {{ cancelingApplicationIds.has(a.id) ? 'Đang hủy...' : 'Hủy apply' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Job Selection Panel -->
     <div class="btc-card max-w-2xl mb-6">
       <h3 class="text-lg font-semibold mb-4">Choose Job Position</h3>
+      <p v-if="!wantedJobIds.length" class="text-sm text-slate-600 mb-3">
+        Hãy thêm job ở trang Việc làm bằng nút “Muốn apply (AI review trước)” để chọn tại đây.
+      </p>
       <select v-model="selectedJobId" @change="onJobSelected" class="btc-input w-full mb-4">
         <option value="">Select a job to review against</option>
-        <option v-for="job in jobs" :key="job._id" :value="job._id">
-          {{ job.title }} - {{ job.companyId }}
+        <option v-for="job in wantedJobs" :key="job.id" :value="job.id">
+          {{ job.title }} - {{ job.companyName || job.companyId }}
         </option>
       </select>
 
