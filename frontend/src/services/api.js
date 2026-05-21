@@ -1,9 +1,11 @@
 import axios from 'axios'
 
 const api = axios.create({
-  // Default to relative '/api' so production can proxy via Vercel rewrites.
-  // Use VITE_API_URL to override (e.g., direct backend URL in dev).
-  baseURL: import.meta.env.VITE_API_URL || '/api'
+  // Use VITE_API_URL when provided.
+  // Otherwise:
+  // - Dev: use '/api' (Vite proxy -> local backend)
+  // - Prod: use '/api-backend/api' (works with existing vercel.json rewrite without needing changes)
+  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api-backend/api' : '/api')
 })
 
 api.interceptors.request.use((config) => {
