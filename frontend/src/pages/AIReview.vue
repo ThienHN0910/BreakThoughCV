@@ -9,6 +9,7 @@ import { useAuthStore } from '../stores/auth'
 const auth = useAuthStore()
 
 const cvUrl = ref('')
+const showCvPreview = ref(false)
 const jobs = ref([])
 const selectedJobId = ref('')
 const selectedJob = ref(null)
@@ -314,11 +315,24 @@ onMounted(() => {
 
     <!-- CV Preview -->
     <div class="btc-card max-w-4xl mb-6">
-      <h3 class="text-lg font-semibold mb-4">Your CV</h3>
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h3 class="text-lg font-semibold">Your CV</h3>
+        <button
+          v-if="cvUrl"
+          class="btc-btn-secondary"
+          type="button"
+          @click="showCvPreview = !showCvPreview"
+        >
+          {{ showCvPreview ? 'Ẩn CV' : 'Hiện CV' }}
+        </button>
+      </div>
       <div v-if="!cvUrl" class="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg">
         <p>Please upload your CV first in <router-link to="/candidate/cv" class="font-semibold underline">CV Management</router-link></p>
       </div>
-      <PdfViewer v-else :pdfUrl="cvUrl" />
+      <PdfViewer v-else-if="showCvPreview" :pdfUrl="cvUrl" />
+      <p v-else class="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+        CV đang được ẩn.
+      </p>
     </div>
 
     <!-- Action Buttons -->

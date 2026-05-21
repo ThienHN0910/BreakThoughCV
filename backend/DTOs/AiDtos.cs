@@ -6,6 +6,15 @@ public record JobSuggestionResult(string JobId, string Reason);
 
 public record CvReviewRequest(string JobId, string? CvText, string? CvUrl);
 
+public record JobKeywordSuggestionRequest(
+    string? Title,
+    string? CategoryName,
+    string? Description,
+    string? TargetField
+);
+
+public record JobKeywordSuggestionResponse(List<string> Keywords);
+
 public record CvReviewResponse(
     string Id,
     int Score,

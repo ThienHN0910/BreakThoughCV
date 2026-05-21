@@ -27,5 +27,5 @@ public class Application
     public DateTime AppliedAt { get; set; } = DateTime.UtcNow;
 
     [BsonElement("status")]
-    public string Status { get; set; } = "Pending"; // "Pending" | "Reviewed"
+    public string Status { get; set; } = "Pending"; // "Pending" | "Reviewed" | "Accepted" | "Rejected"
 }

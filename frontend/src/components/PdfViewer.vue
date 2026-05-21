@@ -173,7 +173,7 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 1rem;
-  padding: 1rem;
+
   background: var(--btc-bg-muted, #f8f9fa);
   border-radius: 0.5rem;
   border: 1px solid var(--btc-border, #e5e7eb);

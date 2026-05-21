@@ -37,6 +37,8 @@
 - `PUT /api/jobs/{id}`
 - `DELETE /api/jobs/{id}`
 - `GET /api/jobs/company/{companyId}`
+- `POST /api/ai/suggest-job-keywords`
+- AI keyword suggestions use job title, category, and description while creating/updating a job. If AI is unavailable, the backend returns a rule-based fallback list.
 - `categoryId` handling:
 - Empty value is normalized to `null`
 - Invalid non-empty value returns `400` (`categoryId is not a valid ObjectId`)
@@ -46,7 +48,7 @@
 - APIs:
 - `GET /api/applications/job/{jobId}`
 - `PUT /api/applications/{id}/status`
-- Allowed status values: `Pending`, `Reviewed`
+- Allowed status values: `Pending`, `Reviewed`, `Accepted`, `Rejected`
 
 ## 3. Candidate Features
 ### 3.1 Job browsing

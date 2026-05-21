@@ -8,6 +8,7 @@ const jobs = ref([])
 const selectedJobId = ref('')
 const applications = ref([])
 const error = ref('')
+const updatingStatusId = ref('')
 
 const openCvApplicationId = ref('')
 const cvBlobUrl = ref('')
@@ -62,6 +63,7 @@ async function loadJobs() {
 async function loadApplications() {
   if (!selectedJobId.value) return
   try {
+    error.value = ''
     const { data } = await api.get(`/applications/job/${selectedJobId.value}`)
     applications.value = data
     closeCvViewer()
@@ -71,8 +73,19 @@ async function loadApplications() {
 }
 
 async function updateStatus(item, status) {
-  await api.put(`/applications/${item.id}/status`, { status })
-  item.status = status
+  if (!item?.id || updatingStatusId.value) return
+
+  updatingStatusId.value = item.id
+  error.value = ''
+
+  try {
+    await api.put(`/applications/${item.id}/status`, { status })
+    item.status = status
+  } catch (e) {
+    error.value = e?.response?.data?.message || 'Không cập nhật được trạng thái'
+  } finally {
+    updatingStatusId.value = ''
+  }
 }
 
 onMounted(async () => {
@@ -111,10 +124,36 @@ onMounted(async () => {
           <p v-if="cvLoading" class="text-sm">Đang tải CV...</p>
           <PdfViewer v-else :pdfUrl="cvBlobUrl" />
         </div>
-        <div class="mt-2 flex items-center gap-2">
+        <div class="mt-3 flex flex-wrap items-center gap-2">
           <span class="text-sm">Trạng thái: {{ item.status }}</span>
-          <button class="btc-btn-secondary px-2.5 py-1 text-xs" @click="updateStatus(item, 'Pending')">Pending</button>
-          <button class="btc-btn-secondary px-2.5 py-1 text-xs" @click="updateStatus(item, 'Reviewed')">Reviewed</button>
+          <button
+            class="btc-btn-secondary px-2.5 py-1 text-xs"
+            :disabled="updatingStatusId === item.id"
+            @click="updateStatus(item, 'Pending')"
+          >
+            Pending
+          </button>
+          <button
+            class="btc-btn-secondary px-2.5 py-1 text-xs"
+            :disabled="updatingStatusId === item.id"
+            @click="updateStatus(item, 'Reviewed')"
+          >
+            Reviewed
+          </button>
+          <button
+            class="btc-btn-primary px-2.5 py-1 text-xs disabled:opacity-60"
+            :disabled="updatingStatusId === item.id"
+            @click="updateStatus(item, 'Accepted')"
+          >
+            Chấp nhận CV
+          </button>
+          <button
+            class="rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
+            :disabled="updatingStatusId === item.id"
+            @click="updateStatus(item, 'Rejected')"
+          >
+            Hủy
+          </button>
         </div>
       </div>
     </div>
