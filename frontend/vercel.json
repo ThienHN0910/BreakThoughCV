@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api-backend/:path*",
-      "destination": "http://breakthoughcv.runasp.net/:path*"
+      "destination": "http://breakthoughcv.runasp.net/api/:path*"
     },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
