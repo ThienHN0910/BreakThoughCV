@@ -34,6 +34,105 @@ public class CvController : ControllerBase
         return $"{Request.Scheme}://{Request.Host}/api/cv/file/{userId}";
     }
 
+    [HttpGet("preview/{id}")]
+    public async Task<IActionResult> PreviewCv(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return BadRequest(new { message = "Invalid id" });
+
+        try
+        {
+            // Authorization scope:
+            // - candidate: only preview their own user CV (id == userId)
+            // - recruiter: only preview CVs by applicationId that belongs to their company/job
+            string? targetUrl = null;
+
+            var role = GetRole();
+            if (role == "candidate")
+            {
+                var userId = GetUserId();
+                if (!string.Equals(id, userId, StringComparison.Ordinal))
+                    return Forbid();
+
+                var user = await _db.Users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+                if (user != null && !string.IsNullOrWhiteSpace(user.CvUrl))
+                    targetUrl = user.CvUrl;
+            }
+            else if (role == "recruiter")
+            {
+                var recruiterId = GetUserId();
+                var application = await _db.Applications.Find(a => a.Id == id).FirstOrDefaultAsync();
+                if (application == null) return NotFound(new { message = "Application not found" });
+
+                var company = await _db.Companies.Find(c => c.RecruiterId == recruiterId).FirstOrDefaultAsync();
+                if (company == null) return Forbid();
+
+                var job = await _db.Jobs.Find(j => j.Id == application.JobId && j.CompanyId == company.Id).FirstOrDefaultAsync();
+                if (job == null) return Forbid();
+
+                if (!string.IsNullOrWhiteSpace(application.CvUrl))
+                    targetUrl = application.CvUrl;
+            }
+            else
+            {
+                return Forbid();
+            }
+
+            if (string.IsNullOrWhiteSpace(targetUrl))
+                return NotFound(new { message = "CV file not found" });
+
+            var client = _httpClientFactory.CreateClient();
+
+            HttpResponseMessage? resp = null;
+            try
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, targetUrl);
+
+                // Forward Range header if present (useful for some PDF viewers)
+                if (Request.Headers.ContainsKey("Range"))
+                {
+                    var range = Request.Headers["Range"].ToString();
+                    request.Headers.TryAddWithoutValidation("Range", range);
+                }
+
+                resp = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
+                // If remote returned 401 and it's a Cloudinary URL, try admin download
+                if (resp.StatusCode == System.Net.HttpStatusCode.Unauthorized && targetUrl.Contains("res.cloudinary.com"))
+                {
+                    var cloudStream = await _cloudinary.DownloadFileAsync(targetUrl);
+                    if (cloudStream != null)
+                    {
+                        resp.Dispose();
+                        return File(cloudStream, "application/pdf");
+                    }
+                }
+
+                if (!resp.IsSuccessStatusCode)
+                {
+                    resp.Dispose();
+                    return BadRequest(new { message = "Failed to download CV file" });
+                }
+
+                var contentType = resp.Content.Headers.ContentType?.MediaType ?? "application/pdf";
+                var stream = await resp.Content.ReadAsStreamAsync();
+
+                // Ensure the HttpResponseMessage stays alive until ASP.NET finishes streaming.
+                HttpContext.Response.RegisterForDispose(resp);
+
+                return File(stream, contentType);
+            }
+            catch (HttpRequestException)
+            {
+                return BadRequest(new { message = "Failed to fetch CV file" });
+            }
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = "Unexpected error", error = ex.Message });
+        }
+    }
+
     [HttpPost("upload")]
     public async Task<IActionResult> UploadCv(IFormFile? cvFile)
     {

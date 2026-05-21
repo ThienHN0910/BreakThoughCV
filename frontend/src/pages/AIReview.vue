@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue'
 import AppLayout from '../layouts/AppLayout.vue'
 import PdfViewer from '../components/PdfViewer.vue'
 import CircleScore from '../components/CircleScore.vue'
@@ -10,6 +10,9 @@ const auth = useAuthStore()
 
 const cvUrl = ref('')
 const showCvPreview = ref(false)
+const cvPreviewBlobUrl = ref('')
+const cvPreviewLoading = ref(false)
+const cvPreviewError = ref('')
 const jobs = ref([])
 const selectedJobId = ref('')
 const selectedJob = ref(null)
@@ -150,6 +153,39 @@ const loadMyCv = async () => {
   }
 }
 
+function revokeCvPreviewUrl() {
+  if (cvPreviewBlobUrl.value) {
+    try {
+      URL.revokeObjectURL(cvPreviewBlobUrl.value)
+    } catch {
+    }
+  }
+  cvPreviewBlobUrl.value = ''
+}
+
+const loadCvPreview = async () => {
+  if (!auth.user?.userId) return
+  if (!cvUrl.value) return
+  if (cvPreviewLoading.value) return
+  if (cvPreviewBlobUrl.value) return
+
+  cvPreviewLoading.value = true
+  cvPreviewError.value = ''
+
+  try {
+    const resp = await api.get(`/cv/preview/${auth.user.userId}`, { responseType: 'blob' })
+    const blob = resp.data instanceof Blob
+      ? resp.data
+      : new Blob([resp.data], { type: 'application/pdf' })
+    cvPreviewBlobUrl.value = URL.createObjectURL(blob)
+  } catch (e) {
+    cvPreviewError.value = e?.response?.data?.message || 'Không tải được CV'
+    revokeCvPreviewUrl()
+  } finally {
+    cvPreviewLoading.value = false
+  }
+}
+
 const loadJobs = async () => {
   try {
     const { data } = await api.get('/jobs?page=1&pageSize=100')
@@ -215,6 +251,14 @@ onMounted(() => {
   loadJobs()
   loadMyApplications()
   loadWantedJobIds()
+})
+
+watch(showCvPreview, (next) => {
+  if (next) loadCvPreview()
+})
+
+onBeforeUnmount(() => {
+  revokeCvPreviewUrl()
 })
 </script>
 
@@ -329,7 +373,11 @@ onMounted(() => {
       <div v-if="!cvUrl" class="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg">
         <p>Please upload your CV first in <router-link to="/candidate/cv" class="font-semibold underline">CV Management</router-link></p>
       </div>
-      <PdfViewer v-else-if="showCvPreview" :pdfUrl="cvUrl" />
+      <div v-else-if="showCvPreview">
+        <p v-if="cvPreviewError" class="mb-2 text-sm text-rose-600">{{ cvPreviewError }}</p>
+        <p v-else-if="cvPreviewLoading" class="text-sm">Đang tải CV...</p>
+        <PdfViewer v-else :pdfUrl="cvPreviewBlobUrl" />
+      </div>
       <p v-else class="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
         CV đang được ẩn.
       </p>

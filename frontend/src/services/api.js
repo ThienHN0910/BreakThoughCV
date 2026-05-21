@@ -1,7 +1,9 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+  // Default to relative '/api' so production can proxy via Vercel rewrites.
+  // Use VITE_API_URL to override (e.g., direct backend URL in dev).
+  baseURL: import.meta.env.VITE_API_URL || '/api'
 })
 
 api.interceptors.request.use((config) => {

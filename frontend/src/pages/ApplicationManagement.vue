@@ -116,7 +116,6 @@ onMounted(async () => {
           <button class="btc-btn-secondary" @click="toggleCvViewer(item)">
             {{ openCvApplicationId === item.id ? 'Đóng CV' : 'Xem CV' }}
           </button>
-          <a v-if="item.cvUrl" :href="item.cvUrl" target="_blank" class="text-blue-600 text-sm">Mở tab mới</a>
         </div>
 
         <div v-if="openCvApplicationId === item.id" class="mt-3">

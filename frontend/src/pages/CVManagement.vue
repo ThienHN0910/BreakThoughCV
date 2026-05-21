@@ -1,14 +1,55 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import AppLayout from '../layouts/AppLayout.vue'
 import PdfViewer from '../components/PdfViewer.vue'
 import api from '../services/api'
+import { useAuthStore } from '../stores/auth'
+
+const auth = useAuthStore()
 
 const cvFile = ref(null)
 const cvUrl = ref('')
+const cvPreviewBlobUrl = ref('')
+const cvPreviewLoading = ref(false)
+const cvPreviewError = ref('')
 const error = ref('')
 const loading = ref(false)
 const hasCv = ref(false)
+
+function revokeCvPreviewUrl() {
+  if (cvPreviewBlobUrl.value) {
+    try {
+      URL.revokeObjectURL(cvPreviewBlobUrl.value)
+    } catch {
+    }
+  }
+  cvPreviewBlobUrl.value = ''
+}
+
+async function loadCvPreview() {
+  if (!auth.user?.userId) return
+  if (!hasCv.value) {
+    revokeCvPreviewUrl()
+    return
+  }
+
+  cvPreviewLoading.value = true
+  cvPreviewError.value = ''
+  revokeCvPreviewUrl()
+
+  try {
+    const resp = await api.get(`/cv/preview/${auth.user.userId}`, { responseType: 'blob' })
+    const blob = resp.data instanceof Blob
+      ? resp.data
+      : new Blob([resp.data], { type: 'application/pdf' })
+    cvPreviewBlobUrl.value = URL.createObjectURL(blob)
+  } catch (e) {
+    cvPreviewError.value = e?.response?.data?.message || 'Không tải được CV'
+    revokeCvPreviewUrl()
+  } finally {
+    cvPreviewLoading.value = false
+  }
+}
 
 function onCvFileSelected(e) {
   cvFile.value = e?.target?.files?.[0] || null
@@ -20,6 +61,7 @@ const loadMyCv = async () => {
     const { data } = await api.get('/cv/my')
     cvUrl.value = data.cvUrl || ''
     hasCv.value = data.hasCV
+    await loadCvPreview()
   } catch (e) {
     console.error('Failed to load CV:', e)
   }
@@ -54,6 +96,7 @@ async function uploadCv() {
     cvUrl.value = data.cvUrl
     hasCv.value = true
     cvFile.value = null
+    await loadCvPreview()
   } catch (e) {
     error.value = e?.response?.data?.message || 'CV upload failed'
     console.error(e)
@@ -71,6 +114,7 @@ async function deleteCv() {
     cvUrl.value = ''
     hasCv.value = false
     error.value = ''
+    revokeCvPreviewUrl()
   } catch (e) {
     error.value = e?.response?.data?.message || 'Failed to delete CV'
     console.error(e)
@@ -87,6 +131,10 @@ function downloadCv() {
 
 onMounted(() => {
   loadMyCv()
+})
+
+onBeforeUnmount(() => {
+  revokeCvPreviewUrl()
 })
 </script>
 
@@ -144,7 +192,9 @@ onMounted(() => {
     <!-- CV Preview Section -->
     <div class="btc-card max-w-4xl">
       <h3 class="text-lg font-semibold mb-4">CV Preview</h3>
-      <PdfViewer :pdfUrl="cvUrl" :onDownload="hasCv ? downloadCv : null" />
+      <p v-if="cvPreviewError" class="mb-2 text-sm text-rose-600">{{ cvPreviewError }}</p>
+      <p v-if="cvPreviewLoading" class="text-sm">Đang tải CV...</p>
+      <PdfViewer v-else :pdfUrl="cvPreviewBlobUrl" :onDownload="hasCv ? downloadCv : null" />
     </div>
   </AppLayout>
 </template>
