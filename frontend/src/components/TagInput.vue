@@ -36,7 +36,7 @@ function removeTag(tag) {
     <div class="flex flex-wrap gap-2 mb-2">
       <span v-for="tag in tags" :key="tag" class="bg-slate-200 px-2 py-1 rounded text-sm">
         {{ tag }}
-        <button class="ml-1" @click="removeTag(tag)">×</button>
+        <button class="ml-1" type="button" @click="removeTag(tag)">x</button>
       </span>
     </div>
     <input

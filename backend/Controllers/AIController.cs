@@ -28,6 +28,7 @@ public class AIController : ControllerBase
 
     private string GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
     private bool IsCandidate() => User.FindFirst("role")?.Value == "candidate";
+    private bool IsRecruiter() => User.FindFirst("role")?.Value == "recruiter";
 
     [HttpPost("suggest-jobs")]
     public async Task<IActionResult> SuggestJobs([FromBody] JobSuggestionRequest request)
@@ -145,5 +146,28 @@ public class AIController : ControllerBase
             )).ToList(),
             CreatedAt: r.CreatedAt
         )));
+    }
+
+    [HttpPost("suggest-job-keywords")]
+    public async Task<IActionResult> SuggestJobKeywords([FromBody] JobKeywordSuggestionRequest request)
+    {
+        if (!IsRecruiter()) return Forbid();
+
+        if (string.IsNullOrWhiteSpace(request.Title) &&
+            string.IsNullOrWhiteSpace(request.CategoryName) &&
+            string.IsNullOrWhiteSpace(request.Description))
+        {
+            return BadRequest(new { message = "Job title, category, or description is required" });
+        }
+
+        var keywords = await _gemini.SuggestJobKeywordsAsync(
+            request.Title,
+            request.CategoryName,
+            request.Description,
+            request.TargetField
+        );
+
+        if (keywords == null) return StatusCode(503, new { message = "AI service unavailable" });
+        return Ok(new JobKeywordSuggestionResponse(keywords));
     }
 }

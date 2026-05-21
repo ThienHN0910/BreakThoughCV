@@ -302,7 +302,10 @@ public class ApplicationController : ControllerBase
     public async Task<IActionResult> UpdateStatus(string id, [FromBody] UpdateApplicationStatusRequest request)
     {
         if (GetRole() != "recruiter") return Forbid();
-        if (request.Status != "Pending" && request.Status != "Reviewed")
+        if (request.Status != "Pending" &&
+            request.Status != "Reviewed" &&
+            request.Status != "Accepted" &&
+            request.Status != "Rejected")
             return BadRequest(new { message = "Invalid status" });
 
         var recruiterId = GetUserId();

@@ -189,4 +189,99 @@ Trả về JSON theo format nghiêm ngặt:
             return null;
         }
     }
+
+    private static List<string> BuildJobKeywordFallback(string? title, string? categoryName, string? description, string? targetField)
+    {
+        var input = $"{title} {categoryName} {description}".ToLowerInvariant();
+        var keywords = new List<string>();
+
+        void Add(params string[] values)
+        {
+            foreach (var value in values)
+            {
+                if (!keywords.Contains(value, StringComparer.OrdinalIgnoreCase))
+                    keywords.Add(value);
+            }
+        }
+
+        if (targetField == "responsibilities")
+        {
+            if (input.Contains("frontend") || input.Contains("front-end") || input.Contains("vue") || input.Contains("react"))
+                Add("Xây dựng giao diện responsive", "Tích hợp REST API", "Tối ưu trải nghiệm người dùng", "Phối hợp với backend");
+            else if (input.Contains("backend") || input.Contains("back-end") || input.Contains(".net") || input.Contains("api"))
+                Add("Thiết kế REST API", "Xử lý logic nghiệp vụ", "Tối ưu truy vấn dữ liệu", "Viết unit test");
+            else
+                Add("Phân tích yêu cầu", "Phát triển tính năng", "Kiểm thử và sửa lỗi", "Viết tài liệu kỹ thuật");
+
+            return keywords.Take(12).ToList();
+        }
+
+        if (input.Contains("frontend") || input.Contains("front-end") || input.Contains("vue") || input.Contains("react"))
+            Add("HTML", "CSS", "JavaScript", "TypeScript", "Vue.js", "React", "Responsive UI", "REST API");
+
+        if (input.Contains("backend") || input.Contains("back-end") || input.Contains(".net") || input.Contains("api"))
+            Add("C#", ".NET", "ASP.NET Core", "REST API", "SQL", "MongoDB", "JWT", "Unit Testing");
+
+        if (input.Contains("mobile") || input.Contains("android") || input.Contains("ios") || input.Contains("flutter"))
+            Add("Flutter", "React Native", "Android", "iOS", "Dart", "Mobile UI", "Firebase", "API Integration");
+
+        if (input.Contains("data") || input.Contains("ai") || input.Contains("machine") || input.Contains("python"))
+            Add("Python", "SQL", "Machine Learning", "Data Analysis", "Pandas", "TensorFlow", "ETL", "Visualization");
+
+        if (input.Contains("devops") || input.Contains("cloud") || input.Contains("aws") || input.Contains("docker"))
+            Add("Docker", "CI/CD", "Linux", "AWS", "Azure", "Kubernetes", "Monitoring", "Git");
+
+        if (keywords.Count == 0)
+            Add("Git", "Problem Solving", "REST API", "Database", "Testing", "Agile", "Documentation", "Communication");
+
+        return keywords.Take(12).ToList();
+    }
+
+    public async Task<List<string>?> SuggestJobKeywordsAsync(string? title, string? categoryName, string? description, string? targetField)
+    {
+        var targetInstruction = targetField switch
+        {
+            "responsibilities" => "Đề xuất các trách nhiệm công việc ngắn gọn, dạng cụm hành động.",
+            "niceToHaveSkills" => "Đề xuất các kỹ năng nice-to-have, công nghệ bổ sung hoặc lợi thế.",
+            _ => "Đề xuất các kỹ năng must-have quan trọng nhất."
+        };
+
+        var prompt = $$"""
+Bạn là trợ lý tuyển dụng IT. Dựa trên tiêu đề công việc, chuyên ngành/danh mục và mô tả JD, hãy đề xuất 8 đến 12 mục phù hợp cho ô đang được recruiter chọn.
+{{targetInstruction}}
+Ưu tiên nội dung ngắn, thực tế, không đưa câu quá dài.
+
+Tiêu đề:
+{{title}}
+
+Chuyên ngành/danh mục:
+{{categoryName}}
+
+Mô tả:
+{{description}}
+
+Trả về JSON đúng format: { "keywords": ["item1", "item2", "..."] }
+""";
+
+        var result = await CallGeminiAsync(prompt);
+        if (result == null) return BuildJobKeywordFallback(title, categoryName, description, targetField);
+
+        try
+        {
+            using var doc = JsonDocument.Parse(result);
+            return doc.RootElement
+                .GetProperty("keywords")
+                .EnumerateArray()
+                .Select(x => x.GetString()?.Trim() ?? string.Empty)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(12)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to parse Gemini job keyword suggestion response: {Result}", result);
+            return BuildJobKeywordFallback(title, categoryName, description, targetField);
+        }
+    }
 }
