@@ -73,12 +73,18 @@ const cancelApplication = async (app) => {
 }
 
 const wantedJobIds = ref([])
+const reviewedJobIds = ref([])
 const applyingWantedJobIds = ref(new Set())
 const wantedActionError = ref('')
 
 function wantedStorageKey() {
   const userId = auth.user?.userId || ''
   return `aiReviewJobIds:${userId}`
+}
+
+function reviewedStorageKey() {
+  const userId = auth.user?.userId || ''
+  return `aiReviewedJobIds:${userId}`
 }
 
 function loadWantedJobIds() {
@@ -94,6 +100,42 @@ function loadWantedJobIds() {
   } catch {
     wantedJobIds.value = []
   }
+}
+
+function loadReviewedJobIds() {
+  if (auth.role !== 'candidate') {
+    reviewedJobIds.value = []
+    return
+  }
+
+  try {
+    const raw = localStorage.getItem(reviewedStorageKey())
+    const parsed = raw ? JSON.parse(raw) : []
+    reviewedJobIds.value = Array.isArray(parsed) ? parsed : []
+  } catch {
+    reviewedJobIds.value = []
+  }
+}
+
+function persistReviewedJobIds(nextIds) {
+  reviewedJobIds.value = nextIds
+  try {
+    localStorage.setItem(reviewedStorageKey(), JSON.stringify(nextIds))
+  } catch {
+  }
+}
+
+function markJobReviewed(jobId) {
+  if (!jobId) return
+  const idSet = new Set(reviewedJobIds.value || [])
+  idSet.add(jobId)
+  persistReviewedJobIds(Array.from(idSet))
+}
+
+function hasReviewedJob(jobId) {
+  if (!jobId) return false
+  if (review.value && lastReviewedJobId.value === jobId) return true
+  return (reviewedJobIds.value || []).includes(jobId)
 }
 
 function persistWantedJobIds(nextIds) {
@@ -119,8 +161,8 @@ const applyWantedJob = async (job) => {
 
   wantedActionError.value = ''
 
-  // Only allow applying after AI review for this exact job
-  if (!review.value || lastReviewedJobId.value !== job.id) {
+  // Only allow applying after AI review for this exact job (cached across logins)
+  if (!hasReviewedJob(job.id)) {
     wantedActionError.value = 'Hãy AI review job này trước khi apply.'
     return
   }
@@ -272,6 +314,7 @@ const reviewCv = async () => {
     const { data } = await api.post('/ai/review-cv', { jobId: selectedJobId.value, cvUrl: cvUrl.value })
     review.value = data
     lastReviewedJobId.value = selectedJobId.value
+    markJobReviewed(selectedJobId.value)
   } catch (e) {
     if (e?.response?.status === 402) {
       error.value = e?.response?.data?.message || 'Vui lòng thanh toán để sử dụng AI.'
@@ -295,6 +338,7 @@ onMounted(async () => {
   loadJobs()
   loadMyApplications()
   loadWantedJobIds()
+  loadReviewedJobIds()
 })
 
 watch(showCvPreview, (next) => {
@@ -329,7 +373,7 @@ onBeforeUnmount(() => {
                 <button class="btc-btn-secondary" @click="selectWantedJob(j)">Review job này</button>
                 <button
                   class="btc-btn-primary"
-                  :disabled="!review || lastReviewedJobId !== j.id || applyingWantedJobIds.has(j.id)"
+                  :disabled="!hasReviewedJob(j.id) || applyingWantedJobIds.has(j.id)"
                   @click="applyWantedJob(j)"
                 >
                   {{ applyingWantedJobIds.has(j.id) ? 'Đang apply...' : 'Apply' }}
@@ -337,7 +381,7 @@ onBeforeUnmount(() => {
                 <button class="btc-btn-secondary border-rose-200 text-rose-700" @click="removeWantedJob(j.id)">Hủy</button>
               </div>
             </div>
-            <p v-if="lastReviewedJobId !== j.id" class="text-xs text-slate-600 mt-2">(Cần review job này trước khi apply)</p>
+            <p v-if="!hasReviewedJob(j.id)" class="text-xs text-slate-600 mt-2">(Cần review job này trước khi apply)</p>
           </div>
         </div>
       </div>
