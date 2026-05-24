@@ -1,0 +1,66 @@
+flowchart TB
+    Start([Start])
+    Login["Login with Google"]
+    RoleCheck{"User has role?"}
+    SelectRole["Select Role"]
+    RoleDecision{"Selected role"}
+
+    Start --> Login
+    Login --> RoleCheck
+    RoleCheck -->|"No role"| SelectRole
+    RoleCheck -->|"Has role"| RoleDecision
+    SelectRole --> RoleDecision
+
+    subgraph CandidateFlow["Candidate Product Flow"]
+        C_Dashboard["Candidate Dashboard"]
+        C_UploadCV["Upload / Manage CV"]
+        C_BrowseJobs["Browse Jobs"]
+        C_SaveJob["Add job to wanted list"]
+        C_AIReview["AI Review CV against JD"]
+        C_Apply{"Review completed?"}
+        C_QuickApply["Apply Job"]
+        C_Track["Track Applied Jobs"]
+        C_Cancel["Cancel Application"]
+
+        C_Dashboard --> C_UploadCV
+        C_Dashboard --> C_BrowseJobs
+        C_BrowseJobs --> C_SaveJob
+        C_SaveJob --> C_AIReview
+        C_AIReview --> C_Apply
+        C_Apply -->|"Yes"| C_QuickApply
+        C_Apply -->|"No"| C_AIReview
+        C_QuickApply --> C_Track
+        C_Track --> C_Cancel
+    end
+
+    subgraph RecruiterFlow["Recruiter Product Flow"]
+        R_Dashboard["Recruiter Dashboard"]
+        R_Company["Create / Update Company Profile"]
+        R_CreateJob["Create / Update Job"]
+        R_JobDetails["Enter job details manually"]
+        R_Publish["Publish Job"]
+        R_ViewApps["View Applications"]
+        R_ViewCV["View Candidate CV"]
+        R_Evaluate["Evaluate Candidate Manually"]
+        R_Decision{"Decision"}
+        R_Accept["Accept CV"]
+        R_Reject["Reject / Cancel"]
+
+        R_Dashboard --> R_Company
+        R_Company --> R_CreateJob
+        R_CreateJob --> R_JobDetails
+        R_JobDetails --> R_Publish
+        R_Publish --> R_ViewApps
+        R_ViewApps --> R_ViewCV
+        R_ViewCV --> R_Evaluate
+        R_Evaluate --> R_Decision
+        R_Decision -->|"Good fit"| R_Accept
+        R_Decision -->|"Not fit"| R_Reject
+    end
+
+    RoleDecision -->|"candidate"| C_Dashboard
+    RoleDecision -->|"recruiter"| R_Dashboard
+
+    C_QuickApply -. creates .-> R_ViewApps
+    R_Accept -. updates status .-> C_Track
+    R_Reject -. updates status .-> C_Track

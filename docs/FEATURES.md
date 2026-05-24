@@ -37,8 +37,6 @@
 - `PUT /api/jobs/{id}`
 - `DELETE /api/jobs/{id}`
 - `GET /api/jobs/company/{companyId}`
-- `POST /api/ai/suggest-job-keywords`
-- AI keyword suggestions use job title, category, and description while creating/updating a job. If AI is unavailable, the backend returns a rule-based fallback list.
 - `categoryId` handling:
 - Empty value is normalized to `null`
 - Invalid non-empty value returns `400` (`categoryId is not a valid ObjectId`)
@@ -80,7 +78,7 @@ Additional details:
 
 Notes:
 - The `POST /api/ai/*` endpoints accept `{ cvText }` or `{ cvUrl }`. If `cvUrl` is provided the server will fetch and extract text for analysis.
-- Recruiters can trigger AI review for a specific application using: `POST /api/applications/{applicationId}/ai-review` (recruiter-only). This returns the same structured CV review used for candidate reviews.
+- AI review is candidate-facing only in the product flow.
 
 ### 3.4 Candidate applications
 - API:

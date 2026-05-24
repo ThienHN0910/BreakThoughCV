@@ -20,7 +20,8 @@ export const useAuthStore = defineStore('auth', {
         email: payload.email,
         name: payload.name,
         avatarUrl: payload.avatarUrl,
-        role: payload.role
+        role: payload.role,
+        aiAccessEnabled: Boolean(payload.aiAccessEnabled)
       }
       this.isNewUser = payload.isNewUser
       localStorage.setItem('token', this.token)
@@ -47,6 +48,20 @@ export const useAuthStore = defineStore('auth', {
       const { data } = await api.put('/auth/update-role', { role })
       this.setSession(data)
       this.isNewUser = false
+      return data
+    },
+    async refreshMe() {
+      const { data } = await api.get('/auth/me')
+      this.user = {
+        ...(this.user || {}),
+        userId: data.userId,
+        email: data.email,
+        name: data.name,
+        avatarUrl: data.avatarUrl,
+        role: data.role,
+        aiAccessEnabled: Boolean(data.aiAccessEnabled)
+      }
+      localStorage.setItem('user', JSON.stringify(this.user))
       return data
     }
   }

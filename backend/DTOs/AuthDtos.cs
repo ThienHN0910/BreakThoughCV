@@ -11,5 +11,6 @@ public record AuthResponse(
     string Name,
     string? AvatarUrl,
     string Role,
-    bool IsNewUser
+    bool IsNewUser,
+    bool AiAccessEnabled
 );

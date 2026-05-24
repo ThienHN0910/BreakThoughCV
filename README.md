@@ -8,6 +8,7 @@
 ## Setup
 ### Backend
 1. Copy `backend/appsettings.Example.json` values into your local `backend/appsettings.json`.
+   - Nếu muốn bật thanh toán PayOS để dùng AI: điền `PayOsSettings` (ClientId/ApiKey/ChecksumKey/ReturnUrl/CancelUrl) và cấu hình webhook trên my.payos.vn trỏ về `POST /api/payments/payos/webhook`.
 2. Run:
    - `cd /home/runner/work/BreakThoughCV/BreakThoughCV/backend`
    - `dotnet run`

@@ -30,10 +30,35 @@ public class AIController : ControllerBase
     private bool IsCandidate() => User.FindFirst("role")?.Value == "candidate";
     private bool IsRecruiter() => User.FindFirst("role")?.Value == "recruiter";
 
+    private async Task<IActionResult?> RequireAiAccessAsync()
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrWhiteSpace(userId)) return Unauthorized();
+
+        var hasAccess = await _db.Users
+            .Find(u => u.Id == userId && u.AiAccessPaidAt != null)
+            .Project(u => u.Id)
+            .AnyAsync();
+
+        if (!hasAccess)
+        {
+            return StatusCode(402, new
+            {
+                message = "Vui lòng thanh toán để sử dụng AI.",
+                paymentRequired = true
+            });
+        }
+
+        return null;
+    }
+
     [HttpPost("suggest-jobs")]
     public async Task<IActionResult> SuggestJobs([FromBody] JobSuggestionRequest request)
     {
         if (!IsCandidate()) return Forbid();
+        var paymentBlock = await RequireAiAccessAsync();
+        if (paymentBlock != null) return paymentBlock;
+
         string? cvText = request.CvText;
         if (string.IsNullOrWhiteSpace(cvText) && !string.IsNullOrWhiteSpace(request.CvUrl))
         {
@@ -70,6 +95,9 @@ public class AIController : ControllerBase
     public async Task<IActionResult> ReviewCv([FromBody] CvReviewRequest request)
     {
         if (!IsCandidate()) return Forbid();
+        var paymentBlock = await RequireAiAccessAsync();
+        if (paymentBlock != null) return paymentBlock;
+
         string? cvText = request.CvText;
         if (string.IsNullOrWhiteSpace(cvText) && !string.IsNullOrWhiteSpace(request.CvUrl))
         {
@@ -132,6 +160,9 @@ public class AIController : ControllerBase
     public async Task<IActionResult> GetReviewHistory()
     {
         if (!IsCandidate()) return Forbid();
+        var paymentBlock = await RequireAiAccessAsync();
+        if (paymentBlock != null) return paymentBlock;
+
         var candidateId = GetUserId();
         var reviews = await _db.CvReviews.Find(r => r.CandidateId == candidateId)
             .SortByDescending(r => r.CreatedAt).ToListAsync();
