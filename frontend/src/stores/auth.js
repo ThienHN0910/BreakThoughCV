@@ -21,7 +21,8 @@ export const useAuthStore = defineStore('auth', {
         name: payload.name,
         avatarUrl: payload.avatarUrl,
         role: payload.role,
-        aiAccessEnabled: Boolean(payload.aiAccessEnabled)
+        aiAccessEnabled: Boolean(payload.aiAccessEnabled),
+        aiAccessExpiresAt: payload.aiAccessExpiresAt || null
       }
       this.isNewUser = payload.isNewUser
       localStorage.setItem('token', this.token)
@@ -59,7 +60,8 @@ export const useAuthStore = defineStore('auth', {
         name: data.name,
         avatarUrl: data.avatarUrl,
         role: data.role,
-        aiAccessEnabled: Boolean(data.aiAccessEnabled)
+        aiAccessEnabled: Boolean(data.aiAccessEnabled),
+        aiAccessExpiresAt: data.aiAccessExpiresAt || null
       }
       localStorage.setItem('user', JSON.stringify(this.user))
       return data

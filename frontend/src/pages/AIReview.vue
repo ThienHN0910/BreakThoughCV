@@ -22,13 +22,9 @@ const selectedJob = ref(null)
 const review = ref(null)
 const loading = ref(false)
 const error = ref('')
+const actionRequired = ref('') // 'BUY_AI' | 'UPLOAD_CV' | ''
 const suggestions = ref([])
 const lastReviewedJobId = ref('')
-
-const paymentLoading = ref(false)
-const paymentVerifying = ref(false)
-const paymentError = ref('')
-const paymentNotice = ref('')
 
 const aiAccessEnabled = computed(() => Boolean(auth.user?.aiAccessEnabled))
 
@@ -159,8 +155,34 @@ const loadMyCv = async () => {
     const { data } = await api.get('/cv/my')
     cvUrl.value = data.cvUrl || ''
   } catch (e) {
+    cvUrl.value = ''
     console.error('Failed to load CV:', e)
   }
+}
+
+const ensureAiAccessAndCv = async () => {
+  error.value = ''
+  actionRequired.value = ''
+
+  try {
+    await auth.refreshMe()
+  } catch {
+  }
+
+  if (!auth.user?.aiAccessEnabled) {
+    error.value = 'Bạn cần mua Gói cước AI để sử dụng AI Review.'
+    actionRequired.value = 'BUY_AI'
+    return false
+  }
+
+  await loadMyCv()
+  if (!cvUrl.value) {
+    error.value = 'Bạn cần upload CV trước khi dùng AI Review.'
+    actionRequired.value = 'UPLOAD_CV'
+    return false
+  }
+
+  return true
 }
 
 function revokeCvPreviewUrl() {
@@ -215,15 +237,8 @@ const onJobSelected = async () => {
 }
 
 const suggestJobs = async () => {
-  if (!aiAccessEnabled.value) {
-    error.value = 'Vui lòng thanh toán để sử dụng AI.'
-    return
-  }
-
-  if (!cvUrl.value) {
-    error.value = 'Please upload your CV first'
-    return
-  }
+  const ok = await ensureAiAccessAndCv()
+  if (!ok) return
 
   try {
     loading.value = true
@@ -233,6 +248,7 @@ const suggestJobs = async () => {
   } catch (e) {
     if (e?.response?.status === 402) {
       error.value = e?.response?.data?.message || 'Vui lòng thanh toán để sử dụng AI.'
+      actionRequired.value = 'BUY_AI'
     } else {
       error.value = e?.response?.data?.message || 'Unable to suggest jobs'
     }
@@ -242,18 +258,11 @@ const suggestJobs = async () => {
 }
 
 const reviewCv = async () => {
-  if (!aiAccessEnabled.value) {
-    error.value = 'Vui lòng thanh toán để sử dụng AI.'
-    return
-  }
+  const ok = await ensureAiAccessAndCv()
+  if (!ok) return
 
   if (!selectedJobId.value) {
     error.value = 'Please select a job'
-    return
-  }
-
-  if (!cvUrl.value) {
-    error.value = 'Please upload your CV first'
     return
   }
 
@@ -266,6 +275,7 @@ const reviewCv = async () => {
   } catch (e) {
     if (e?.response?.status === 402) {
       error.value = e?.response?.data?.message || 'Vui lòng thanh toán để sử dụng AI.'
+      actionRequired.value = 'BUY_AI'
     } else {
       error.value = e?.response?.data?.message || 'Unable to review CV'
     }
@@ -274,83 +284,6 @@ const reviewCv = async () => {
   }
 }
 
-const startAiPayment = async () => {
-  if (paymentLoading.value) return
-
-  paymentError.value = ''
-  paymentNotice.value = ''
-
-  try {
-    paymentLoading.value = true
-    const { data } = await api.post('/payments/payos/ai-access/create')
-
-    if (data?.alreadyPaid || data?.aiAccessEnabled) {
-      await auth.refreshMe()
-      paymentNotice.value = 'Tài khoản đã có quyền sử dụng AI.'
-      return
-    }
-
-    if (!data?.checkoutUrl) {
-      paymentError.value = 'Không tạo được link thanh toán.'
-      return
-    }
-
-    window.location.href = data.checkoutUrl
-  } catch (e) {
-    const data = e?.response?.data
-    const baseMsg = data?.message || 'Không tạo được link thanh toán'
-    const missing = Array.isArray(data?.missing) ? data.missing : []
-    const hint = data?.hint
-
-    paymentError.value = [
-      baseMsg,
-      missing.length ? `Thiếu cấu hình: ${missing.join(', ')}` : '',
-      hint ? `Gợi ý: ${hint}` : ''
-    ].filter(Boolean).join(' | ')
-  } finally {
-    paymentLoading.value = false
-  }
-}
-
-const verifyAiPaymentFromReturnUrl = async () => {
-  const orderCode = route.query.orderCode
-  if (!orderCode) return
-
-  const cancel = String(route.query.cancel || '').toLowerCase() === 'true'
-  const status = String(route.query.status || '').toUpperCase()
-
-  // Clean URL early to avoid double-verification on reactive re-renders
-  try {
-    await router.replace({ path: route.path, query: {} })
-  } catch {
-  }
-
-  if (cancel || status === 'CANCELLED') {
-    paymentNotice.value = 'Bạn đã hủy thanh toán.'
-    return
-  }
-
-  if (status !== 'PAID') {
-    paymentNotice.value = 'Thanh toán đang được xử lý. Nếu đã thanh toán, hãy thử tải lại trang.'
-    return
-  }
-
-  try {
-    paymentVerifying.value = true
-    paymentError.value = ''
-    const { data } = await api.get('/payments/payos/ai-access/verify', { params: { orderCode } })
-    await auth.refreshMe()
-    if (data?.aiAccessEnabled) {
-      paymentNotice.value = 'Thanh toán thành công. Bạn có thể sử dụng AI ngay.'
-    } else {
-      paymentNotice.value = 'Chưa xác nhận được thanh toán. Hãy thử lại sau.'
-    }
-  } catch (e) {
-    paymentError.value = e?.response?.data?.message || 'Không xác minh được thanh toán'
-  } finally {
-    paymentVerifying.value = false
-  }
-}
 
 onMounted(async () => {
   try {
@@ -362,7 +295,6 @@ onMounted(async () => {
   loadJobs()
   loadMyApplications()
   loadWantedJobIds()
-  verifyAiPaymentFromReturnUrl()
 })
 
 watch(showCvPreview, (next) => {
@@ -495,34 +427,14 @@ onBeforeUnmount(() => {
       </p>
     </div>
 
-    <!-- Payment Gate -->
-    <div v-if="!aiAccessEnabled || paymentNotice || paymentError || paymentVerifying" class="btc-card max-w-2xl mb-6">
-      <h3 class="text-lg font-semibold mb-2">Thanh toán để sử dụng AI</h3>
-      <p v-if="aiAccessEnabled" class="text-sm text-slate-600">AI đã được kích hoạt cho tài khoản của bạn.</p>
-      <p v-else class="text-sm text-slate-600">Tính năng AI yêu cầu thanh toán qua PayOS trước khi sử dụng.</p>
-
-      <div class="mt-4 flex flex-wrap gap-3">
-        <button
-          v-if="!aiAccessEnabled"
-          class="btc-btn-primary"
-          :disabled="paymentLoading || paymentVerifying"
-          @click="startAiPayment"
-        >
-          {{ paymentLoading ? 'Đang tạo thanh toán...' : 'Thanh toán qua PayOS' }}
-        </button>
-        <button
-          v-else
-          class="btc-btn-secondary"
-          type="button"
-          @click="paymentNotice = ''"
-        >
-          Ẩn thông báo
+    <div v-if="!aiAccessEnabled" class="btc-card max-w-2xl mb-6">
+      <h3 class="text-lg font-semibold mb-2">Bạn chưa có quyền AI</h3>
+      <p class="text-sm text-slate-600">Vui lòng mua gói AI ở trang “Gói AI đã mua” để sử dụng AI Review.</p>
+      <div class="mt-4">
+        <button class="btc-btn-primary" type="button" @click="router.push('/candidate/ai-purchases')">
+          Mở trang gói AI đã mua
         </button>
       </div>
-
-      <p v-if="paymentVerifying" class="text-sm mt-3">Đang xác minh thanh toán...</p>
-      <p v-if="paymentNotice" class="text-sm text-teal-700 mt-3">{{ paymentNotice }}</p>
-      <p v-if="paymentError" class="text-sm text-rose-600 mt-3">{{ paymentError }}</p>
     </div>
 
     <!-- Action Buttons -->
@@ -530,20 +442,40 @@ onBeforeUnmount(() => {
       <div class="flex gap-3 flex-wrap">
         <button
           class="btc-btn-secondary"
-          :disabled="!cvUrl || loading"
+          type="button"
+          :disabled="loading"
           @click="suggestJobs"
         >
           {{ loading ? 'Analyzing...' : 'Get Job Suggestions' }}
         </button>
         <button
           class="btc-btn-primary"
-          :disabled="!cvUrl || !selectedJobId || loading"
+          type="button"
+          :disabled="loading"
           @click="reviewCv"
         >
           {{ loading ? 'Reviewing...' : 'Review CV for This Job' }}
         </button>
       </div>
       <p v-if="error" class="text-sm text-rose-600 mt-3">{{ error }}</p>
+      <div v-if="actionRequired" class="mt-3">
+        <button
+          v-if="actionRequired === 'BUY_AI'"
+          class="btc-btn-primary"
+          type="button"
+          @click="router.push('/candidate/ai-purchases')"
+        >
+          Mua gói AI
+        </button>
+        <button
+          v-else-if="actionRequired === 'UPLOAD_CV'"
+          class="btc-btn-primary"
+          type="button"
+          @click="router.push('/candidate/cv')"
+        >
+          Upload CV
+        </button>
+      </div>
     </div>
 
     <!-- Job Suggestions -->

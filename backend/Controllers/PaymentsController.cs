@@ -30,9 +30,40 @@ public class PaymentsController : ControllerBase
 
     private string GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
 
+    private static bool IsAiAccessActive(User user, DateTime now)
+    {
+        if (user.AiAccessPaidAt == null) return false;
+        if (user.AiAccessExpiresAt == null) return true; // legacy: lifetime access
+        return user.AiAccessExpiresAt > now;
+    }
+
+    private (string Plan, int Amount, int Days, string Description) ResolveAiPlan(string? raw)
+    {
+        var plan = (raw ?? string.Empty).Trim().ToUpperInvariant();
+        if (plan is not ("WEEK" or "MONTH" or "YEAR")) plan = "MONTH";
+
+        return plan switch
+        {
+            "WEEK" => ("WEEK", _settings.AiAccessWeekAmount, _settings.AiAccessWeekDays, "AI_WEEK"),
+            "YEAR" => ("YEAR", _settings.AiAccessYearAmount, _settings.AiAccessYearDays, "AI_YEAR"),
+            _ => ("MONTH", _settings.AiAccessMonthAmount, _settings.AiAccessMonthDays, "AI_MONTH")
+        };
+    }
+
+    private int ResolveAiPlanDays(string? plan)
+    {
+        var p = (plan ?? string.Empty).Trim().ToUpperInvariant();
+        return p switch
+        {
+            "WEEK" => _settings.AiAccessWeekDays,
+            "YEAR" => _settings.AiAccessYearDays,
+            _ => _settings.AiAccessMonthDays
+        };
+    }
+
     [HttpPost("ai-access/create")]
     [Authorize]
-    public async Task<IActionResult> CreateAiAccessPayment()
+    public async Task<IActionResult> CreateAiAccessPayment([FromBody] CreateAiAccessPaymentRequest? request)
     {
         var userId = GetUserId();
         if (string.IsNullOrWhiteSpace(userId)) return Unauthorized();
@@ -40,7 +71,8 @@ public class PaymentsController : ControllerBase
         var user = await _db.Users.Find(u => u.Id == userId).FirstOrDefaultAsync();
         if (user == null) return NotFound(new { message = "User not found" });
 
-        if (user.AiAccessPaidAt != null)
+        var now = DateTime.UtcNow;
+        if (IsAiAccessActive(user, now))
         {
             return Ok(new CreateAiAccessPaymentResponse(
                 AlreadyPaid: true,
@@ -70,9 +102,15 @@ public class PaymentsController : ControllerBase
         if (string.IsNullOrWhiteSpace(_settings.ReturnUrl) || string.IsNullOrWhiteSpace(_settings.CancelUrl))
             return StatusCode(500, new { message = "PayOS ReturnUrl/CancelUrl is not configured" });
 
+        var resolved = ResolveAiPlan(request?.Plan);
         var orderCode = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var amount = _settings.AiAccessAmount;
-        var description = string.IsNullOrWhiteSpace(_settings.AiAccessDescription) ? "AI_ACCESS" : _settings.AiAccessDescription;
+        var amount = resolved.Amount;
+        var description = resolved.Description;
+
+        if (amount <= 0) return BadRequest(new { message = "Invalid amount" });
+
+        // payOS description can be constrained; keep short and stable
+        if (string.IsNullOrWhiteSpace(description)) description = "AI_ACCESS";
 
         var data = await _payOs.CreatePaymentLinkAsync(orderCode, amount, description, _settings.ReturnUrl, _settings.CancelUrl);
         if (data == null)
@@ -82,13 +120,14 @@ public class PaymentsController : ControllerBase
         {
             UserId = userId,
             Type = "AI_ACCESS",
+            Plan = resolved.Plan,
             OrderCode = orderCode,
             Amount = amount,
             Description = description,
             PaymentLinkId = data.PaymentLinkId,
             Status = data.Status ?? "PENDING",
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = now,
+            UpdatedAt = now
         };
 
         await _db.PaymentTransactions.InsertOneAsync(tx);
@@ -102,6 +141,35 @@ public class PaymentsController : ControllerBase
         ));
     }
 
+    [HttpGet("ai-access/plans")]
+    [Authorize]
+    public IActionResult GetAiAccessPlans()
+    {
+        var plans = new List<AiAccessPlanDto>
+        {
+            new(
+                Key: "WEEK",
+                Label: "1 tuần",
+                Amount: _settings.AiAccessWeekAmount,
+                Days: _settings.AiAccessWeekDays
+            ),
+            new(
+                Key: "MONTH",
+                Label: "1 tháng",
+                Amount: _settings.AiAccessMonthAmount,
+                Days: _settings.AiAccessMonthDays
+            ),
+            new(
+                Key: "YEAR",
+                Label: "1 năm",
+                Amount: _settings.AiAccessYearAmount,
+                Days: _settings.AiAccessYearDays
+            )
+        };
+
+        return Ok(plans);
+    }
+
     [HttpGet("ai-access/verify")]
     [Authorize]
     public async Task<IActionResult> VerifyAiAccessPayment([FromQuery] long orderCode)
@@ -112,7 +180,8 @@ public class PaymentsController : ControllerBase
         var user = await _db.Users.Find(u => u.Id == userId).FirstOrDefaultAsync();
         if (user == null) return NotFound(new { message = "User not found" });
 
-        if (user.AiAccessPaidAt != null)
+        var now = DateTime.UtcNow;
+        if (IsAiAccessActive(user, now))
         {
             return Ok(new VerifyAiAccessPaymentResponse(AiAccessEnabled: true, Status: "PAID"));
         }
@@ -131,14 +200,24 @@ public class PaymentsController : ControllerBase
 
         var updates = Builders<PaymentTransaction>.Update
             .Set(x => x.Status, status)
-            .Set(x => x.UpdatedAt, DateTime.UtcNow);
+            .Set(x => x.UpdatedAt, now);
 
-        if (status == "PAID")
+        if (status == "PAID" && tx.AccessToAt == null)
         {
-            updates = updates.Set(x => x.PaidAt, DateTime.UtcNow);
+            var days = ResolveAiPlanDays(tx.Plan);
+            var baseTime = user.AiAccessExpiresAt.HasValue && user.AiAccessExpiresAt.Value > now
+                ? user.AiAccessExpiresAt.Value
+                : now;
+            var expiresAt = baseTime.AddDays(days);
+
+            updates = updates
+                .Set(x => x.PaidAt, now)
+                .Set(x => x.AccessFromAt, baseTime)
+                .Set(x => x.AccessToAt, expiresAt);
 
             var userUpdate = Builders<User>.Update
-                .Set(u => u.AiAccessPaidAt, DateTime.UtcNow);
+                .Set(u => u.AiAccessPaidAt, now)
+                .Set(u => u.AiAccessExpiresAt, expiresAt);
             await _db.Users.UpdateOneAsync(u => u.Id == userId, userUpdate);
         }
 
@@ -148,6 +227,35 @@ public class PaymentsController : ControllerBase
             AiAccessEnabled: status == "PAID",
             Status: status
         ));
+    }
+
+    [HttpGet("ai-access/history")]
+    [Authorize]
+    public async Task<IActionResult> GetAiAccessHistory()
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrWhiteSpace(userId)) return Unauthorized();
+
+        var items = await _db.PaymentTransactions
+            .Find(t => t.UserId == userId && t.Type == "AI_ACCESS")
+            .SortByDescending(t => t.CreatedAt)
+            .Limit(100)
+            .ToListAsync();
+
+        var dto = items.Select(t => new AiAccessPurchaseDto(
+            OrderCode: t.OrderCode,
+            Plan: string.IsNullOrWhiteSpace(t.Plan) ? "MONTH" : t.Plan,
+            Amount: t.Amount,
+            Status: t.Status,
+            Description: t.Description,
+            PaymentLinkId: t.PaymentLinkId,
+            CreatedAt: t.CreatedAt,
+            PaidAt: t.PaidAt,
+            AccessFromAt: t.AccessFromAt,
+            AccessToAt: t.AccessToAt
+        ));
+
+        return Ok(dto);
     }
 
     [HttpPost("webhook")]
@@ -191,15 +299,30 @@ public class PaymentsController : ControllerBase
                 .Set(t => t.RawWebhook, JsonSerializer.Serialize(request))
                 .Set(t => t.Status, paid ? "PAID" : tx.Status);
 
-            if (paid)
+            if (paid && tx.AccessToAt == null)
             {
-                updates = updates
-                    .Set(t => t.PaidAt, DateTime.UtcNow);
+                var now = DateTime.UtcNow;
+                var user = await _db.Users.Find(u => u.Id == tx.UserId).FirstOrDefaultAsync();
+                if (user != null)
+                {
+                    var days = ResolveAiPlanDays(tx.Plan);
+                    var baseTime = user.AiAccessExpiresAt.HasValue && user.AiAccessExpiresAt.Value > now
+                        ? user.AiAccessExpiresAt.Value
+                        : now;
+                    var expiresAt = baseTime.AddDays(days);
 
-                await _db.Users.UpdateOneAsync(
-                    u => u.Id == tx.UserId,
-                    Builders<User>.Update.Set(u => u.AiAccessPaidAt, DateTime.UtcNow)
-                );
+                    updates = updates
+                        .Set(t => t.PaidAt, now)
+                        .Set(t => t.AccessFromAt, baseTime)
+                        .Set(t => t.AccessToAt, expiresAt);
+
+                    await _db.Users.UpdateOneAsync(
+                        u => u.Id == tx.UserId,
+                        Builders<User>.Update
+                            .Set(u => u.AiAccessPaidAt, now)
+                            .Set(u => u.AiAccessExpiresAt, expiresAt)
+                    );
+                }
             }
 
             await _db.PaymentTransactions.UpdateOneAsync(t => t.Id == tx.Id, updates);

@@ -15,6 +15,9 @@ public class PaymentTransaction
     [BsonElement("type")]
     public string Type { get; set; } = "AI_ACCESS";
 
+    [BsonElement("plan")]
+    public string Plan { get; set; } = "MONTH";
+
     [BsonElement("orderCode")]
     public long OrderCode { get; set; }
 
@@ -35,6 +38,12 @@ public class PaymentTransaction
 
     [BsonElement("paidAt")]
     public DateTime? PaidAt { get; set; }
+
+    [BsonElement("accessFromAt")]
+    public DateTime? AccessFromAt { get; set; }
+
+    [BsonElement("accessToAt")]
+    public DateTime? AccessToAt { get; set; }
 
     [BsonElement("updatedAt")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

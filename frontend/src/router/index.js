@@ -10,6 +10,7 @@ import CompanyManagementPage from '../pages/CompanyManagement.vue'
 import JobManagementPage from '../pages/JobManagement.vue'
 import ApplicationManagementPage from '../pages/ApplicationManagement.vue'
 import AIReviewPage from '../pages/AIReview.vue'
+import AiPurchaseHistoryPage from '../pages/AiPurchaseHistory.vue'
 
 const routes = [
   { path: '/login', component: LoginPage },
@@ -18,6 +19,7 @@ const routes = [
   { path: '/jobs', component: JobListPage, meta: { requiresAuth: true } },
   { path: '/candidate/cv', component: CVManagementPage, meta: { requiresAuth: true, role: 'candidate' } },
   { path: '/candidate/ai-review', component: AIReviewPage, meta: { requiresAuth: true, role: 'candidate' } },
+  { path: '/candidate/ai-purchases', component: AiPurchaseHistoryPage, meta: { requiresAuth: true, role: 'candidate' } },
   { path: '/recruiter/company', component: CompanyManagementPage, meta: { requiresAuth: true, role: 'recruiter' } },
   { path: '/recruiter/jobs', component: JobManagementPage, meta: { requiresAuth: true, role: 'recruiter' } },
   { path: '/recruiter/applications', component: ApplicationManagementPage, meta: { requiresAuth: true, role: 'recruiter' } }

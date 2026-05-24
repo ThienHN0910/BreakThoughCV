@@ -18,7 +18,8 @@ const navItems = computed(() => {
   return [
     { to: '/jobs', label: 'Việc làm' },
     { to: '/candidate/cv', label: 'CV của tôi' },
-    { to: '/candidate/ai-review', label: 'AI Review' }
+    { to: '/candidate/ai-review', label: 'AI Review' },
+    { to: '/candidate/ai-purchases', label: 'Gói AI đã mua' }
   ]
 })
 

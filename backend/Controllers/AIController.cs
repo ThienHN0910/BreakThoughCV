@@ -35,12 +35,17 @@ public class AIController : ControllerBase
         var userId = GetUserId();
         if (string.IsNullOrWhiteSpace(userId)) return Unauthorized();
 
-        var hasAccess = await _db.Users
-            .Find(u => u.Id == userId && u.AiAccessPaidAt != null)
-            .Project(u => u.Id)
-            .AnyAsync();
+        var user = await _db.Users
+            .Find(u => u.Id == userId)
+            .Project(u => new { u.AiAccessPaidAt, u.AiAccessExpiresAt })
+            .FirstOrDefaultAsync();
 
-        if (!hasAccess)
+        var now = DateTime.UtcNow;
+        var enabled = user != null
+                      && user.AiAccessPaidAt != null
+                      && (user.AiAccessExpiresAt == null || user.AiAccessExpiresAt > now);
+
+        if (!enabled)
         {
             return StatusCode(402, new
             {

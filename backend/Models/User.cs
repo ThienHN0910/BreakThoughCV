@@ -29,4 +29,7 @@ public class User
 
     [BsonElement("aiAccessPaidAt")]
     public DateTime? AiAccessPaidAt { get; set; }
+
+    [BsonElement("aiAccessExpiresAt")]
+    public DateTime? AiAccessExpiresAt { get; set; }
 }

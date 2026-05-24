@@ -54,7 +54,7 @@ public class AuthController : ControllerBase
                 AvatarUrl: newUser.AvatarUrl,
                 Role: newUser.Role,
                 IsNewUser: true,
-                AiAccessEnabled: newUser.AiAccessPaidAt != null
+                AiAccessEnabled: newUser.AiAccessPaidAt != null && (newUser.AiAccessExpiresAt == null || newUser.AiAccessExpiresAt > DateTime.UtcNow)
             ));
         }
 
@@ -67,7 +67,7 @@ public class AuthController : ControllerBase
             AvatarUrl: existingUser.AvatarUrl,
             Role: existingUser.Role,
             IsNewUser: false,
-            AiAccessEnabled: existingUser.AiAccessPaidAt != null
+            AiAccessEnabled: existingUser.AiAccessPaidAt != null && (existingUser.AiAccessExpiresAt == null || existingUser.AiAccessExpiresAt > DateTime.UtcNow)
         ));
     }
 
@@ -97,7 +97,7 @@ public class AuthController : ControllerBase
             AvatarUrl: user.AvatarUrl,
             Role: user.Role,
             IsNewUser: false,
-            AiAccessEnabled: user.AiAccessPaidAt != null
+            AiAccessEnabled: user.AiAccessPaidAt != null && (user.AiAccessExpiresAt == null || user.AiAccessExpiresAt > DateTime.UtcNow)
         ));
     }
 
@@ -118,7 +118,8 @@ public class AuthController : ControllerBase
             name = user.Name,
             avatarUrl = user.AvatarUrl,
             role = user.Role,
-            aiAccessEnabled = user.AiAccessPaidAt != null
+            aiAccessEnabled = user.AiAccessPaidAt != null && (user.AiAccessExpiresAt == null || user.AiAccessExpiresAt > DateTime.UtcNow),
+            aiAccessExpiresAt = user.AiAccessExpiresAt
         });
     }
 }
