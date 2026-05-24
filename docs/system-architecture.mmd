@@ -1,0 +1,51 @@
+flowchart TB
+    Candidate["Candidate User"]
+    Recruiter["Recruiter User"]
+
+    subgraph Frontend["Frontend - Vue 3 + Vite"]
+        Pages["Pages: Login, Dashboard, JobList, CVManagement, AIReview, JobManagement"]
+        Router["Vue Router: role guards"]
+        Store["Pinia Auth Store: user, token, role"]
+        ApiClient["Axios API Client: JWT interceptor, 401 redirect"]
+        PdfViewer["PDF Viewer: pdfjs-dist"]
+    end
+
+    subgraph Backend["Backend - .NET 8 Web API"]
+        Controllers["Controllers: Auth, CV, Job, Company, Application, AI, Category"]
+        JwtAuth["JWT Bearer Authentication + Role Authorization"]
+        Services["Services: MongoDB, Cloudinary, Gemini, Google Auth, PDF Text"]
+    end
+
+    subgraph Database["MongoDB Collections"]
+        Users[("users")]
+        Categories[("categories")]
+        Companies[("companies")]
+        Jobs[("jobs")]
+        Applications[("applications")]
+        CvReviews[("cvReviews")]
+    end
+
+    subgraph External["External Services"]
+        Google["Google Identity"]
+        Cloudinary["Cloudinary Storage"]
+        Gemini["Google Gemini API"]
+    end
+
+    Candidate --> Pages
+    Recruiter --> Pages
+    Pages --> Router
+    Router --> Store
+    Pages --> ApiClient
+    Pages --> PdfViewer
+    ApiClient -->|"HTTP /api/* + JWT"| Controllers
+    Controllers --> JwtAuth
+    Controllers --> Services
+    Services --> Users
+    Services --> Categories
+    Services --> Companies
+    Services --> Jobs
+    Services --> Applications
+    Services --> CvReviews
+    Services --> Google
+    Services --> Cloudinary
+    Services --> Gemini

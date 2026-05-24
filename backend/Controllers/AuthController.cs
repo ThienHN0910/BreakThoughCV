@@ -53,7 +53,8 @@ public class AuthController : ControllerBase
                 Name: newUser.Name,
                 AvatarUrl: newUser.AvatarUrl,
                 Role: newUser.Role,
-                IsNewUser: true
+                IsNewUser: true,
+                AiAccessEnabled: newUser.AiAccessPaidAt != null
             ));
         }
 
@@ -65,7 +66,8 @@ public class AuthController : ControllerBase
             Name: existingUser.Name,
             AvatarUrl: existingUser.AvatarUrl,
             Role: existingUser.Role,
-            IsNewUser: false
+            IsNewUser: false,
+            AiAccessEnabled: existingUser.AiAccessPaidAt != null
         ));
     }
 
@@ -94,7 +96,8 @@ public class AuthController : ControllerBase
             Name: user.Name,
             AvatarUrl: user.AvatarUrl,
             Role: user.Role,
-            IsNewUser: false
+            IsNewUser: false,
+            AiAccessEnabled: user.AiAccessPaidAt != null
         ));
     }
 
@@ -114,7 +117,8 @@ public class AuthController : ControllerBase
             email = user.Email,
             name = user.Name,
             avatarUrl = user.AvatarUrl,
-            role = user.Role
+            role = user.Role,
+            aiAccessEnabled = user.AiAccessPaidAt != null
         });
     }
 }

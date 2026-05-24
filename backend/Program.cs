@@ -12,6 +12,7 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSet
 builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("GoogleAuthSettings"));
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 builder.Services.Configure<GeminiSettings>(builder.Configuration.GetSection("GeminiSettings"));
+builder.Services.Configure<PayOsSettings>(builder.Configuration.GetSection("PayOsSettings"));
 
 // Services
 builder.Services.AddSingleton<MongoDbService>();
@@ -19,6 +20,7 @@ builder.Services.AddSingleton<CloudinaryService>();
 builder.Services.AddSingleton<JwtService>();
 builder.Services.AddSingleton<GoogleAuthService>();
 builder.Services.AddHttpClient<GeminiService>();
+builder.Services.AddHttpClient<PayOsService>();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<PdfTextService>();
 

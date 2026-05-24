@@ -15,4 +15,12 @@
       <PackageReference Include="UglyToad.PdfPig" Version="1.7.0-custom-5" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Keep dev tools out of the Web API build (avoids top-level statement + duplicate assembly attributes) -->
+    <Compile Remove="Tools\**\*.cs" />
+    <Content Remove="Tools\**" />
+    <None Remove="Tools\**" />
+    <EmbeddedResource Remove="Tools\**" />
+  </ItemGroup>
+
 </Project>

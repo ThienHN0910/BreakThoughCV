@@ -26,4 +26,7 @@ public class User
 
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("aiAccessPaidAt")]
+    public DateTime? AiAccessPaidAt { get; set; }
 }

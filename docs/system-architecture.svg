@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="920" viewBox="0 0 1400 920">
+  <defs>
+    <style>
+      .title { font: 700 30px Arial, sans-serif; fill: #132238; }
+      .section-title { font: 700 18px Arial, sans-serif; fill: #132238; }
+      .box-title { font: 700 15px Arial, sans-serif; fill: #132238; }
+      .text { font: 13px Arial, sans-serif; fill: #34465d; }
+      .small { font: 12px Arial, sans-serif; fill: #5d728a; }
+      .section { fill: #f7fbff; stroke: #b8d7ff; stroke-width: 2; rx: 18; }
+      .box { fill: #ffffff; stroke: #9fb9d8; stroke-width: 1.5; rx: 12; }
+      .user { fill: #eef6ff; stroke: #0b5fff; stroke-width: 2; rx: 14; }
+      .external { fill: #fff8e8; stroke: #f0b429; stroke-width: 2; rx: 12; }
+      .db { fill: #ecfff6; stroke: #18a058; stroke-width: 2; rx: 12; }
+      .arrow { stroke: #46627f; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+      .arrow-soft { stroke: #7b91aa; stroke-width: 1.8; fill: none; marker-end: url(#arrowSoft); stroke-dasharray: 7 5; }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#46627f"/>
+    </marker>
+    <marker id="arrowSoft" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#7b91aa"/>
+    </marker>
+  </defs>
+
+  <rect width="1400" height="920" fill="#ffffff"/>
+  <text x="50" y="55" class="title">BreakThroughCV - System Architecture</text>
+  <text x="50" y="82" class="small">Vue 3 frontend, .NET 8 Web API, MongoDB, Cloudinary, Google Login, Gemini AI</text>
+
+  <!-- Users -->
+  <rect x="55" y="145" width="185" height="82" class="user"/>
+  <text x="147" y="178" text-anchor="middle" class="box-title">Candidate</text>
+  <text x="147" y="201" text-anchor="middle" class="text">Upload CV, apply jobs,</text>
+  <text x="147" y="220" text-anchor="middle" class="text">AI review CV</text>
+
+  <rect x="55" y="285" width="185" height="82" class="user"/>
+  <text x="147" y="318" text-anchor="middle" class="box-title">Recruiter</text>
+  <text x="147" y="341" text-anchor="middle" class="text">Manage company, jobs,</text>
+  <text x="147" y="360" text-anchor="middle" class="text">applications</text>
+
+  <!-- Frontend -->
+  <rect x="300" y="115" width="320" height="330" class="section"/>
+  <text x="460" y="145" text-anchor="middle" class="section-title">Frontend</text>
+  <text x="460" y="168" text-anchor="middle" class="small">Vue 3 + Vite + Pinia + Tailwind</text>
+
+  <rect x="330" y="190" width="260" height="58" class="box"/>
+  <text x="460" y="213" text-anchor="middle" class="box-title">Pages</text>
+  <text x="460" y="235" text-anchor="middle" class="text">Login, JobList, CV, AIReview, Jobs</text>
+
+  <rect x="330" y="270" width="260" height="58" class="box"/>
+  <text x="460" y="293" text-anchor="middle" class="box-title">Vue Router</text>
+  <text x="460" y="315" text-anchor="middle" class="text">role-based guards</text>
+
+  <rect x="330" y="350" width="260" height="58" class="box"/>
+  <text x="460" y="373" text-anchor="middle" class="box-title">Pinia + Axios</text>
+  <text x="460" y="395" text-anchor="middle" class="text">JWT interceptor, 401 redirect</text>
+
+  <!-- Backend -->
+  <rect x="700" y="115" width="340" height="430" class="section"/>
+  <text x="870" y="145" text-anchor="middle" class="section-title">Backend API</text>
+  <text x="870" y="168" text-anchor="middle" class="small">.NET 8 Web API</text>
+
+  <rect x="730" y="190" width="280" height="68" class="box"/>
+  <text x="870" y="214" text-anchor="middle" class="box-title">Controllers</text>
+  <text x="870" y="236" text-anchor="middle" class="text">Auth, CV, Jobs, Company,</text>
+  <text x="870" y="253" text-anchor="middle" class="text">Applications, AI, Categories</text>
+
+  <rect x="730" y="285" width="280" height="58" class="box"/>
+  <text x="870" y="309" text-anchor="middle" class="box-title">Security</text>
+  <text x="870" y="331" text-anchor="middle" class="text">JWT Bearer + role authorization</text>
+
+  <rect x="730" y="370" width="280" height="128" class="box"/>
+  <text x="870" y="395" text-anchor="middle" class="box-title">Services</text>
+  <text x="870" y="419" text-anchor="middle" class="text">MongoDbService</text>
+  <text x="870" y="438" text-anchor="middle" class="text">CloudinaryService</text>
+  <text x="870" y="457" text-anchor="middle" class="text">GeminiService</text>
+  <text x="870" y="476" text-anchor="middle" class="text">GoogleAuthService, PdfTextService</text>
+
+  <!-- Database -->
+  <rect x="1120" y="105" width="220" height="260" class="section"/>
+  <text x="1230" y="135" text-anchor="middle" class="section-title">MongoDB</text>
+  <rect x="1150" y="165" width="160" height="34" class="db"/>
+  <text x="1230" y="187" text-anchor="middle" class="text">users</text>
+  <rect x="1150" y="205" width="160" height="34" class="db"/>
+  <text x="1230" y="227" text-anchor="middle" class="text">companies</text>
+  <rect x="1150" y="245" width="160" height="34" class="db"/>
+  <text x="1230" y="267" text-anchor="middle" class="text">jobs</text>
+  <rect x="1150" y="285" width="160" height="34" class="db"/>
+  <text x="1230" y="307" text-anchor="middle" class="text">applications</text>
+  <rect x="1150" y="325" width="160" height="34" class="db"/>
+  <text x="1230" y="347" text-anchor="middle" class="text">cvReviews</text>
+
+  <!-- External -->
+  <rect x="1120" y="435" width="220" height="245" class="section"/>
+  <text x="1230" y="465" text-anchor="middle" class="section-title">External Services</text>
+  <rect x="1150" y="500" width="160" height="45" class="external"/>
+  <text x="1230" y="528" text-anchor="middle" class="text">Google Identity</text>
+  <rect x="1150" y="565" width="160" height="45" class="external"/>
+  <text x="1230" y="593" text-anchor="middle" class="text">Cloudinary</text>
+  <rect x="1150" y="630" width="160" height="45" class="external"/>
+  <text x="1230" y="658" text-anchor="middle" class="text">Gemini API</text>
+
+  <!-- Main flows -->
+  <path d="M240 186 C270 186 270 219 330 219" class="arrow"/>
+  <path d="M240 326 C270 326 270 299 330 299" class="arrow"/>
+  <path d="M590 379 C640 379 660 224 730 224" class="arrow"/>
+  <text x="650" y="286" class="small">HTTP /api/* + JWT</text>
+
+  <path d="M1010 434 C1060 434 1070 235 1150 235" class="arrow"/>
+  <path d="M1010 434 C1065 434 1070 523 1150 523" class="arrow-soft"/>
+  <path d="M1010 434 C1065 434 1070 588 1150 588" class="arrow-soft"/>
+  <path d="M1010 434 C1065 434 1070 653 1150 653" class="arrow-soft"/>
+
+  <!-- Flow notes -->
+  <rect x="70" y="610" width="930" height="230" class="section"/>
+  <text x="95" y="645" class="section-title">Key System Flows</text>
+  <text x="100" y="680" class="box-title">1. Authentication</text>
+  <text x="130" y="705" class="text">User logs in with Google; backend validates ID token, creates/loads user, returns JWT and role.</text>
+  <text x="100" y="740" class="box-title">2. Candidate AI Review</text>
+  <text x="130" y="765" class="text">Candidate selects job; API fetches CV, extracts PDF text, sends CV + JD to Gemini, stores CV review.</text>
+  <text x="100" y="800" class="box-title">3. Recruiter Job Management</text>
+  <text x="130" y="825" class="text">Recruiter creates jobs, views candidate CVs, and updates application status manually.</text>
+
+  <text x="50" y="890" class="small">Source: BreakThroughCV docs and codebase architecture.</text>
+</svg>

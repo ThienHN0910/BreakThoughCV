@@ -20,5 +20,7 @@ backend/appsettings.json
 .DS_Store
 Thumbs.db
 .env
+scripts/
+Tools/
 
 PublishProfiles/
