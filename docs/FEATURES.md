@@ -44,9 +44,29 @@
 ### 2.3 Candidate applications management
 - Frontend page: `/recruiter/applications`
 - APIs:
-- `GET /api/applications/job/{jobId}`
-- `PUT /api/applications/{id}/status`
+  - `GET /api/applications/job/{jobId}` - List all applications for a specific job
+  - `PUT /api/applications/{id}/status` - Update application status
+  - `GET /api/applications/{id}/cv-file` - Download candidate's CV as blob
+- Behavior:
+  - Recruiter selects a job from dropdown (auto-populated from their posted jobs)
+  - Applications automatically load when a job is selected
+  - Shows list of candidates with:
+    - Candidate name and email
+    - Application date
+    - Current status badge
+  - Recruiter can view candidate's CV inline (PDF preview)
+  - Status update buttons: `Pending` → `Reviewed` → `Accepted` or `Rejected`
+  - Once rejected, status buttons are disabled
 - Allowed status values: `Pending`, `Reviewed`, `Accepted`, `Rejected`
+- Authorization:
+  - Only recruiter role can access this page (403 for candidates)
+  - Recruiter can only see applications for jobs their company posted
+- **NEW Auto-Refresh Feature** (2026-05-24):
+  - Applications list auto-refreshes every 30 seconds when page is open
+  - Detects if candidates cancel applications in real-time
+  - Manual "🔄 Làm mới" button for instant refresh
+  - Shows last refresh timestamp
+  - Prevents stale data when candidates hủy apply
 
 ## 3. Candidate Features
 ### 3.1 Job browsing
@@ -84,6 +104,12 @@ Notes:
 - API:
 - `POST /api/applications` (multipart/form-data)
 - `GET /api/applications/my`
+- `DELETE /api/applications/{id}` - Cancel application
+- Behavior:
+  - Candidate can view all their applications
+  - Can cancel any application (status = any)
+  - When cancelled → automatically triggers cascade delete on CvReviews
+  - Recruiter's view auto-updates (via 30s polling)
 
 ## 4. Authorization Rules
 - Recruiter-only APIs return `403` for candidate users
@@ -104,7 +130,58 @@ Notes:
 - `AIReview.vue`
 - `ApplicationManagement.vue`
 
-## 6. Test Checklist (Feature-Based)
+## 6. Bug Fixes (2026-05-24)
+### ApplicationManagement.vue - Recruiter unable to view candidates
+**Issue**: Recruiter companies could apply but recruiters couldn't see applications list.
+
+### ApplicationManagement Auto-Refresh + Cascade Delete
+**Feature**: Automatic data synchronization when candidates cancel applications
+
+**Implementation**:
+- **Backend**: DELETE /applications/{id} triggers cascade delete on CvReviews
+  - Application collection: deleted by candidateId + applicationId match (owner check)
+  - CvReview collection: all reviews for that applicationId deleted
+  - Cloudinary CV file: best-effort delete attempt
+
+- **Frontend**: Auto-polling refresh every 30s
+  - Only active when: job selected AND applications exist
+  - Triggers: when applications list changes
+  - Manual button: "🔄 Làm mới" for instant refresh
+  - Shows last refresh timestamp for transparency
+  - Cleanup: polling stops on page unmount to prevent resource leaks
+
+**Database Relationships**:
+```
+Application (candidateId, jobId, status)
+    ↓ (cascade delete via applicationId)
+CvReview (customerreviewId: ApplicationId)
+**Database Relationships**:
+```
+Application (candidateId, jobId, applicationId)
+  ↓ (cascade delete)
+CvReview (applicationId references Application.id)
+```
+```
+
+**Root Cause**:
+1. Missing error handling in `loadJobs()` - if API call failed, `selectedJobId` was never set
+2. `loadApplications()` returned early if `selectedJobId` was empty (which it always was on first load)
+3. Manual button click required to load applications (not user-friendly)
+
+**Fix Applied**:
+1. Added try-catch error handling to `loadJobs()` with user-friendly error messages
+2. Added `watch` on `selectedJobId` to auto-load applications when job selection changes
+3. Removed manual "Xem ứng viên" button - applications load automatically
+4. Enhanced UI with:
+   - Better error display section
+   - Loading indicators (⏳)
+   - Disabled states for controls during loading
+   - Status badges with color coding (yellow=Pending, blue=Reviewed, green=Accepted, red=Rejected)
+   - Timestamp display for when candidate applied
+   - Better empty state messages with link to create jobs
+   - Emojis for better UX
+
+## 7. Test Checklist (Feature-Based)
 1. Login and role switching works and returns valid JWT.
 2. Recruiter can read/update company profile.
 3. Recruiter can create/update/delete jobs.
@@ -113,3 +190,10 @@ Notes:
 6. Candidate can call candidate-only endpoints.
 7. Public endpoints (`/jobs`, `/categories`) are reachable without auth.
 8. Frontend handles `401` by clearing session and redirecting to `/login`.
+9. **NEW**: Recruiter can view applications for their jobs automatically when selected
+10. **NEW**: Applications list shows candidate info, timestamp, and current status
+11. **NEW**: Recruiter can update application status from Pending/Reviewed/Accepted/Rejected
+12. **NEW**: Recruiter can view candidate CV inline as PDF preview
+13. **NEW**: Applications list auto-refreshes every 30 seconds
+14. **NEW**: Candidate can cancel application and recruiter list auto-updates
+15. **NEW**: Canceling application also deletes associated CvReviews (cascade)
