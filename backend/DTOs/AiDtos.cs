@@ -24,4 +24,15 @@ public record CvReviewResponse(
     DateTime CreatedAt
 );
 
+public record CvReviewHistoryItemResponse(
+    string Id,
+    string JobId,
+    string? JobTitle,
+    int Score,
+    List<string> MissingKeywords,
+    List<string> CriticalFixes,
+    List<TailoredSuggestionDto> TailoredSuggestions,
+    DateTime CreatedAt
+);
+
 public record TailoredSuggestionDto(string Section, string OriginalText, string SuggestedText);

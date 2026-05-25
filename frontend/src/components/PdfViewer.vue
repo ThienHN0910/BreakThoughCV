@@ -30,7 +30,7 @@
       </div>
 
       <!-- PDF Canvas -->
-      <div class="pdf-canvas-wrapper">
+      <div class="pdf-canvas-wrapper" :style="wrapperStyle">
         <canvas ref="pdfCanvas" class="pdf-canvas"></canvas>
       </div>
 
@@ -57,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, nextTick } from 'vue'
+import { ref, watch, onMounted, nextTick, computed } from 'vue'
 import * as pdfjsLib from 'pdfjs-dist'
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
@@ -69,9 +69,30 @@ const props = defineProps({
     type: String,
     default: null
   },
+  maxHeight: {
+    type: [Number, String],
+    default: 600
+  },
   onDownload: {
     type: Function,
     default: null
+  }
+})
+
+function resolveMaxHeight(value) {
+  if (value === null || value === undefined) return 'none'
+  if (typeof value === 'number') return `${value}px`
+  const trimmed = String(value).trim()
+  if (!trimmed) return 'none'
+  return trimmed
+}
+
+const wrapperStyle = computed(() => {
+  const maxHeight = resolveMaxHeight(props.maxHeight)
+  const isUnlimited = maxHeight === 'none'
+  return {
+    maxHeight,
+    overflow: isUnlimited ? 'visible' : 'auto'
   }
 })
 
@@ -248,13 +269,14 @@ onMounted(() => {
 }
 
 .pdf-canvas-wrapper {
-  display: flex;
-  justify-content: center;
-  overflow: auto;
-  max-height: 600px;
+  display: block;
 }
 
 .pdf-canvas {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
   border: 1px solid var(--btc-border, #e5e7eb);
   border-radius: 0.25rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

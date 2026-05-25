@@ -12,6 +12,10 @@ async function onGoogleCredentialResponse(response) {
   try {
     loadingGoogle.value = true
     const result = await auth.loginWithGoogleIdToken(response.credential)
+      try {
+        sessionStorage.setItem('welcomePending', new Date().toISOString())
+      } catch {
+      }
     if (result.isNewUser || result.role === 'none') router.push('/select-role')
     else router.push('/')
   } catch (e) {

@@ -3,8 +3,10 @@ import { onMounted, ref } from 'vue'
 import AppLayout from '../layouts/AppLayout.vue'
 import api from '../services/api'
 import { useAuthStore } from '../stores/auth'
+import { useNotificationsStore } from '../stores/notifications'
 
 const auth = useAuthStore()
+const notifications = useNotificationsStore()
 
 const jobs = ref([])
 const categories = ref([])
@@ -17,10 +19,16 @@ const myAppliedJobIds = ref([])
 const applyingJobId = ref('')
 
 const aiReviewJobIds = ref([])
+const reviewedJobIds = ref([])
 
 function aiReviewStorageKey() {
-  const userId = auth.user?.userId || ''
-  return `aiReviewJobIds:${userId}`
+  const userKey = auth.user?.userId || auth.user?.email || ''
+  return `aiReviewJobIds:${userKey}`
+}
+
+function reviewedStorageKey() {
+  const userKey = auth.user?.userId || auth.user?.email || ''
+  return `aiReviewedJobIds:${userKey}`
 }
 
 function loadAiReviewJobIds() {
@@ -35,6 +43,26 @@ function loadAiReviewJobIds() {
   } catch {
     aiReviewJobIds.value = []
   }
+}
+
+function loadReviewedJobIds() {
+  if (auth.role !== 'candidate') {
+    reviewedJobIds.value = []
+    return
+  }
+  try {
+    const raw = localStorage.getItem(reviewedStorageKey())
+    const parsed = raw ? JSON.parse(raw) : []
+    reviewedJobIds.value = Array.isArray(parsed) ? parsed : []
+  } catch {
+    reviewedJobIds.value = []
+  }
+}
+
+function isReviewed(jobId) {
+  if (!jobId) return false
+  const normalized = String(jobId)
+  return (reviewedJobIds.value || []).map(String).includes(normalized)
 }
 
 function saveAiReviewJobIds() {
@@ -57,7 +85,45 @@ async function loadMyApplications() {
   if (auth.role !== 'candidate') return
   try {
     const { data } = await api.get('/applications/my')
-    myAppliedJobIds.value = (data || []).map(a => a.jobId)
+    const apps = data || []
+    myAppliedJobIds.value = apps.map(a => a.jobId)
+
+    const userKey = auth.user?.userId || auth.user?.email || ''
+    const statusKey = userKey ? `applicationStatus:${userKey}` : ''
+    if (statusKey) {
+      let prevMap = {}
+      try {
+        const raw = localStorage.getItem(statusKey)
+        prevMap = raw ? JSON.parse(raw) : {}
+      } catch {
+        prevMap = {}
+      }
+
+      const nextMap = {}
+      for (const a of apps) {
+        if (!a?.id) continue
+        const id = String(a.id)
+        const nextStatus = a.status || ''
+        nextMap[id] = nextStatus
+
+        const prevStatus = prevMap?.[id]
+        if (prevStatus && prevStatus !== nextStatus) {
+          const type = nextStatus === 'Accepted' ? 'success' : nextStatus === 'Rejected' ? 'warning' : 'info'
+          const jobLabel = a.jobTitle || a.jobName || a.jobId || 'Hồ sơ ứng tuyển'
+          notifications.add({
+            type,
+            title: 'Cập nhật hồ sơ ứng tuyển',
+            message: `${jobLabel}: ${prevStatus} → ${nextStatus}`,
+            href: '/notifications'
+          })
+        }
+      }
+
+      try {
+        localStorage.setItem(statusKey, JSON.stringify(nextMap))
+      } catch {
+      }
+    }
   } catch {
     // ignore: candidate may have none or token may be missing
     myAppliedJobIds.value = []
@@ -77,6 +143,13 @@ async function applyJob(job) {
     error.value = ''
     await api.post('/applications/quick', { jobId: job.id })
     myAppliedJobIds.value = [...myAppliedJobIds.value, job.id]
+
+    notifications.add({
+      type: 'success',
+      title: 'Nộp hồ sơ thành công',
+      message: job?.title ? `Bạn đã nộp hồ sơ cho: ${job.title}` : 'Bạn đã nộp hồ sơ thành công.',
+      href: '/jobs'
+    })
   } catch (e) {
     error.value = e?.response?.data?.message || 'Apply thất bại'
   } finally {
@@ -105,6 +178,7 @@ onMounted(async () => {
   await Promise.all([loadCategories(), loadJobs()])
   await loadMyApplications()
   loadAiReviewJobIds()
+  loadReviewedJobIds()
 })
 </script>
 
@@ -127,7 +201,15 @@ onMounted(async () => {
 
     <div class="grid gap-4">
       <div v-for="job in jobs" :key="job.id" class="btc-card">
-        <h3 class="font-semibold text-lg">{{ job.title }}</h3>
+        <div class="flex flex-wrap items-center gap-2">
+          <h3 class="font-semibold text-lg">{{ job.title }}</h3>
+          <span
+            v-if="isReviewed(job.id)"
+            class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700"
+          >
+            AI đã review
+          </span>
+        </div>
         <p class="text-sm text-slate-500">{{ job.companyName }} • {{ job.categoryName || 'Chưa phân loại' }}</p>
         <p class="mt-2 text-sm">{{ job.description }}</p>
         <div class="mt-2 flex flex-wrap gap-2 text-xs">

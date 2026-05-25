@@ -1,17 +1,32 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useNotificationsStore } from '../stores/notifications'
 
 const auth = useAuthStore()
 const router = useRouter()
+const notifications = useNotificationsStore()
+
+const isVip = computed(() => Boolean(auth.user?.aiAccessEnabled))
+
+watch(
+  () => auth.user?.userId || auth.user?.email || '',
+  () => {
+    notifications.ensureLoaded()
+  },
+  { immediate: true }
+)
+
+const unreadNotifications = computed(() => notifications.unreadCount)
 
 const navItems = computed(() => {
   if (auth.role === 'recruiter') {
     return [
       { to: '/recruiter/company', label: 'Công ty' },
       { to: '/recruiter/jobs', label: 'Tuyển dụng' },
-      { to: '/recruiter/applications', label: 'Ứng viên' }
+      { to: '/recruiter/applications', label: 'Ứng viên' },
+      { to: '/notifications', label: 'Thông báo' }
     ]
   }
 
@@ -19,7 +34,8 @@ const navItems = computed(() => {
     { to: '/jobs', label: 'Việc làm' },
     { to: '/candidate/cv', label: 'CV của tôi' },
     { to: '/candidate/ai-review', label: 'AI Review' },
-    { to: '/candidate/ai-purchases', label: 'Gói AI đã mua' }
+    { to: '/candidate/ai-purchases', label: 'Gói AI đã mua' },
+    { to: '/notifications', label: 'Thông báo' }
   ]
 })
 
@@ -46,14 +62,30 @@ function logout() {
             <button
               v-for="item in navItems"
               :key="item.to"
-              class="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-white"
+              class="relative rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-white"
               @click="router.push(item.to)"
             >
-              {{ item.label }}
+              <span class="inline-flex items-center gap-1">
+                <span>{{ item.label }}</span>
+                <span
+                  v-if="item.to === '/notifications' && unreadNotifications"
+                  class="absolute left-1 top-1 h-2 w-2 rounded-full bg-rose-600"
+                >
+                </span>
+              </span>
             </button>
           </nav>
           <div class="hidden text-right md:block">
-            <p class="text-sm font-semibold">{{ auth.user?.name }}</p>
+            <p class="text-sm font-semibold">
+              <span>{{ auth.user?.name }}</span>
+              <span
+                v-if="isVip"
+                class="ml-2 inline-flex items-center rounded-lg border px-2 py-0.5 text-[11px] font-bold"
+                :style="{ borderColor: 'var(--btc-border)', background: 'var(--btc-bg-2)', color: 'var(--btc-primary)' }"
+              >
+                VIP
+              </span>
+            </p>
             <p class="text-xs uppercase tracking-wide text-slate-500">{{ auth.role }}</p>
           </div>
           <button class="btc-btn-secondary" @click="logout">Logout</button>

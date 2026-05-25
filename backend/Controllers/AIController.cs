@@ -172,8 +172,22 @@ public class AIController : ControllerBase
         var reviews = await _db.CvReviews.Find(r => r.CandidateId == candidateId)
             .SortByDescending(r => r.CreatedAt).ToListAsync();
 
-        return Ok(reviews.Select(r => new CvReviewResponse(
+        var jobIds = reviews.Select(r => r.JobId).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
+        var jobs = jobIds.Count == 0
+            ? new List<(string Id, string Title)>()
+            : (await _db.Jobs.Find(j => jobIds.Contains(j.Id!))
+                .Project(j => new { j.Id, j.Title })
+                .ToListAsync())
+                .Where(j => !string.IsNullOrWhiteSpace(j.Id))
+                .Select(j => (Id: j.Id!, Title: j.Title))
+                .ToList();
+
+        var jobTitleById = jobs.ToDictionary(j => j.Id, j => j.Title);
+
+        return Ok(reviews.Select(r => new CvReviewHistoryItemResponse(
             Id: r.Id!,
+            JobId: r.JobId,
+            JobTitle: jobTitleById.TryGetValue(r.JobId, out var title) ? title : null,
             Score: r.Score,
             MissingKeywords: r.MissingKeywords,
             CriticalFixes: r.CriticalFixes,

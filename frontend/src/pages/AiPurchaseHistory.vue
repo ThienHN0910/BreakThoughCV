@@ -4,10 +4,12 @@ import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '../layouts/AppLayout.vue'
 import api from '../services/api'
 import { useAuthStore } from '../stores/auth'
+import { useNotificationsStore } from '../stores/notifications'
 
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
+const notifications = useNotificationsStore()
 
 const loading = ref(false)
 const error = ref('')
@@ -60,6 +62,13 @@ async function startAiPayment() {
     if (data?.alreadyPaid || data?.aiAccessEnabled) {
       await auth.refreshMe()
       paymentNotice.value = 'Tài khoản đã có quyền sử dụng AI.'
+
+      notifications.add({
+        type: 'info',
+        title: 'Gói AI đang hoạt động',
+        message: 'Tài khoản của bạn đã có quyền sử dụng AI Review.',
+        href: '/candidate/ai-review'
+      })
       return
     }
 
@@ -115,6 +124,13 @@ async function verifyAiPaymentFromReturnUrl() {
     await loadHistory()
     if (data?.aiAccessEnabled) {
       paymentNotice.value = 'Thanh toán thành công. Bạn có thể sử dụng AI ngay.'
+
+      notifications.add({
+        type: 'success',
+        title: 'Mua gói AI thành công',
+        message: 'Bạn có thể sử dụng AI Review ngay bây giờ.',
+        href: '/candidate/ai-review'
+      })
     } else {
       paymentNotice.value = 'Chưa xác nhận được thanh toán. Hãy thử lại sau.'
     }

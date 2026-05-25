@@ -1,13 +1,15 @@
 <script setup>
-import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue'
+import { ref, onMounted, computed, watch, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '../layouts/AppLayout.vue'
 import PdfViewer from '../components/PdfViewer.vue'
 import CircleScore from '../components/CircleScore.vue'
 import api from '../services/api'
 import { useAuthStore } from '../stores/auth'
+import { useNotificationsStore } from '../stores/notifications'
 
 const auth = useAuthStore()
+const notifications = useNotificationsStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -25,6 +27,50 @@ const error = ref('')
 const actionRequired = ref('') // 'BUY_AI' | 'UPLOAD_CV' | ''
 const suggestions = ref([])
 const lastReviewedJobId = ref('')
+const reviewResultsRef = ref(null)
+
+const reviewHistory = ref([])
+const reviewHistoryLoading = ref(false)
+const reviewHistoryError = ref('')
+const selectedHistoryId = ref('')
+const expandedHistoryMap = ref({})
+
+function isHistoryExpanded(id) {
+  if (!id) return false
+  return Boolean(expandedHistoryMap.value?.[id])
+}
+
+function toggleHistoryExpanded(id) {
+  if (!id) return
+  const next = { ...(expandedHistoryMap.value || {}) }
+  next[id] = !next[id]
+  expandedHistoryMap.value = next
+}
+
+async function scrollToReviewResults() {
+  await nextTick()
+  try {
+    reviewResultsRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  } catch {
+  }
+}
+
+async function openAndToggleHistory(item) {
+  const id = item?.id
+  if (!id) return
+
+  // If collapsed → open review + expand
+  if (!isHistoryExpanded(id)) {
+    openHistoryItem(item)
+    // Only keep one expanded at a time
+    expandedHistoryMap.value = { [id]: true }
+    await scrollToReviewResults()
+    return
+  }
+
+  // If expanded → collapse only
+  expandedHistoryMap.value = {}
+}
 
 const aiAccessEnabled = computed(() => Boolean(auth.user?.aiAccessEnabled))
 
@@ -46,7 +92,45 @@ const loadMyApplications = async () => {
     applicationsLoading.value = true
     applicationsError.value = ''
     const { data } = await api.get('/applications/my')
-    applications.value = data || []
+    const nextApplications = data || []
+    applications.value = nextApplications
+
+    const userKey = auth.user?.userId || auth.user?.email || ''
+    const statusKey = userKey ? `applicationStatus:${userKey}` : ''
+    if (statusKey) {
+      let prevMap = {}
+      try {
+        const raw = localStorage.getItem(statusKey)
+        prevMap = raw ? JSON.parse(raw) : {}
+      } catch {
+        prevMap = {}
+      }
+
+      const nextMap = {}
+      for (const a of nextApplications) {
+        if (!a?.id) continue
+        const id = String(a.id)
+        const nextStatus = a.status || ''
+        nextMap[id] = nextStatus
+
+        const prevStatus = prevMap?.[id]
+        if (prevStatus && prevStatus !== nextStatus) {
+          const type = nextStatus === 'Accepted' ? 'success' : nextStatus === 'Rejected' ? 'warning' : 'info'
+          const jobLabel = a.jobTitle || a.jobName || a.jobId || 'Hồ sơ ứng tuyển'
+          notifications.add({
+            type,
+            title: 'Cập nhật hồ sơ ứng tuyển',
+            message: `${jobLabel}: ${prevStatus} → ${nextStatus}`,
+            href: '/candidate/ai-review'
+          })
+        }
+      }
+
+      try {
+        localStorage.setItem(statusKey, JSON.stringify(nextMap))
+      } catch {
+      }
+    }
   } catch (e) {
     applicationsError.value = e?.response?.data?.message || 'Không tải được danh sách việc đã apply'
     applications.value = []
@@ -78,13 +162,13 @@ const applyingWantedJobIds = ref(new Set())
 const wantedActionError = ref('')
 
 function wantedStorageKey() {
-  const userId = auth.user?.userId || ''
-  return `aiReviewJobIds:${userId}`
+  const userKey = auth.user?.userId || auth.user?.email || ''
+  return `aiReviewJobIds:${userKey}`
 }
 
 function reviewedStorageKey() {
-  const userId = auth.user?.userId || ''
-  return `aiReviewedJobIds:${userId}`
+  const userKey = auth.user?.userId || auth.user?.email || ''
+  return `aiReviewedJobIds:${userKey}`
 }
 
 function loadWantedJobIds() {
@@ -99,6 +183,14 @@ function loadWantedJobIds() {
     wantedJobIds.value = Array.isArray(parsed) ? parsed : []
   } catch {
     wantedJobIds.value = []
+  }
+}
+
+function persistWantedJobIds(nextIds) {
+  wantedJobIds.value = nextIds
+  try {
+    localStorage.setItem(wantedStorageKey(), JSON.stringify(nextIds))
+  } catch {
   }
 }
 
@@ -127,23 +219,17 @@ function persistReviewedJobIds(nextIds) {
 
 function markJobReviewed(jobId) {
   if (!jobId) return
-  const idSet = new Set(reviewedJobIds.value || [])
-  idSet.add(jobId)
-  persistReviewedJobIds(Array.from(idSet))
+  const normalized = String(jobId)
+  const nextSet = new Set((reviewedJobIds.value || []).map(String))
+  nextSet.add(normalized)
+  persistReviewedJobIds(Array.from(nextSet))
 }
 
 function hasReviewedJob(jobId) {
   if (!jobId) return false
-  if (review.value && lastReviewedJobId.value === jobId) return true
-  return (reviewedJobIds.value || []).includes(jobId)
-}
-
-function persistWantedJobIds(nextIds) {
-  wantedJobIds.value = nextIds
-  try {
-    localStorage.setItem(wantedStorageKey(), JSON.stringify(nextIds))
-  } catch {
-  }
+  const normalized = String(jobId)
+  if (review.value && String(lastReviewedJobId.value) === normalized) return true
+  return (reviewedJobIds.value || []).map(String).includes(normalized)
 }
 
 function removeWantedJob(jobId) {
@@ -269,13 +355,98 @@ const loadJobs = async () => {
   }
 }
 
-const onJobSelected = async () => {
+const onJobSelected = async (arg) => {
+  const preserveReview = Boolean(arg && typeof arg === 'object' && arg.preserveReview === true)
   const job = jobs.value.find(j => j.id === selectedJobId.value)
   selectedJob.value = job || null
 
   // prevent applying with stale review result
+  if (!preserveReview) {
+    review.value = null
+    selectedHistoryId.value = ''
+    error.value = ''
+  }
+}
+
+const loadReviewHistory = async () => {
+  if (auth.role !== 'candidate') {
+    reviewHistory.value = []
+    return
+  }
+
+  try {
+    reviewHistoryLoading.value = true
+    reviewHistoryError.value = ''
+    const { data } = await api.get('/ai/review-history')
+    const next = Array.isArray(data) ? data : []
+    reviewHistory.value = next
+
+    // Sync reviewed job ids from server history into local cache
+    const historyJobIds = next
+      .map(r => r?.jobId)
+      .filter(Boolean)
+      .map(String)
+
+    if (historyJobIds.length) {
+      const nextSet = new Set((reviewedJobIds.value || []).map(String))
+      for (const id of historyJobIds) nextSet.add(id)
+      persistReviewedJobIds(Array.from(nextSet))
+    }
+  } catch (e) {
+    if (e?.response?.status === 402) {
+      reviewHistoryError.value = e?.response?.data?.message || 'Vui lòng thanh toán để sử dụng AI.'
+      actionRequired.value = 'BUY_AI'
+    } else {
+      reviewHistoryError.value = e?.response?.data?.message || 'Không tải được lịch sử AI review'
+    }
+    reviewHistory.value = []
+  } finally {
+    reviewHistoryLoading.value = false
+  }
+}
+
+function openHistoryItem(item) {
+  if (!item) return
+  selectedHistoryId.value = item.id || ''
+
+  if (item.jobId) {
+    // Keep dropdown stable: only set selectedJobId if the job is currently in "wanted" list
+    if ((wantedJobIds.value || []).includes(item.jobId)) {
+      selectedJobId.value = item.jobId
+    }
+    selectedJob.value = (jobs.value || []).find(j => j.id === item.jobId) || null
+  }
+
+  review.value = {
+    score: item.score,
+    missingKeywords: item.missingKeywords || [],
+    criticalFixes: item.criticalFixes || [],
+    tailoredSuggestions: item.tailoredSuggestions || [],
+    createdAt: item.createdAt,
+    jobId: item.jobId,
+    jobTitle: item.jobTitle,
+    id: item.id
+  }
+  lastReviewedJobId.value = item.jobId || ''
+  if (item.jobId) markJobReviewed(item.jobId)
+}
+
+const reviewAgainFromHistory = async (item) => {
+  if (!item?.jobId) return
+
+  // Set selected job for the API call (dropdown may remain unchanged)
+  selectedJobId.value = item.jobId
+  selectedJob.value = (jobs.value || []).find(j => j.id === item.jobId) || null
+  selectedHistoryId.value = item.id || ''
+
+  // Fresh review
   review.value = null
   error.value = ''
+  await reviewCv()
+
+  // Reload history so the newest review appears on top
+  await loadReviewHistory()
+  await scrollToReviewResults()
 }
 
 const suggestJobs = async () => {
@@ -312,7 +483,11 @@ const reviewCv = async () => {
     loading.value = true
     error.value = ''
     const { data } = await api.post('/ai/review-cv', { jobId: selectedJobId.value, cvUrl: cvUrl.value })
-    review.value = data
+    review.value = {
+      ...(data || {}),
+      jobId: selectedJobId.value,
+      jobTitle: selectedJob.value?.title || null
+    }
     lastReviewedJobId.value = selectedJobId.value
     markJobReviewed(selectedJobId.value)
   } catch (e) {
@@ -339,6 +514,7 @@ onMounted(async () => {
   loadMyApplications()
   loadWantedJobIds()
   loadReviewedJobIds()
+  loadReviewHistory()
 })
 
 watch(showCvPreview, (next) => {
@@ -366,11 +542,19 @@ onBeforeUnmount(() => {
           <div v-for="j in wantedJobs" :key="j.id" class="border border-slate-200 rounded-lg p-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p class="font-semibold">{{ j.title }}</p>
+                <div class="flex flex-wrap items-center gap-2">
+                  <p class="font-semibold">{{ j.title }}</p>
+                  <span
+                    v-if="hasReviewedJob(j.id)"
+                    class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700"
+                  >
+                    AI đã review
+                  </span>
+                </div>
                 <p class="text-sm text-slate-600">{{ j.companyName }} • {{ j.categoryName || 'Chưa phân loại' }}</p>
               </div>
               <div class="flex items-center gap-2">
-                <button class="btc-btn-secondary" @click="selectWantedJob(j)">Review job này</button>
+                <button v-if="!hasReviewedJob(j.id)" class="btc-btn-secondary" @click="selectWantedJob(j)">Review job này</button>
                 <button
                   class="btc-btn-primary"
                   :disabled="!hasReviewedJob(j.id) || applyingWantedJobIds.has(j.id)"
@@ -446,31 +630,7 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- CV Preview -->
-    <div class="btc-card max-w-4xl mb-6">
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h3 class="text-lg font-semibold">Your CV</h3>
-        <button
-          v-if="cvUrl"
-          class="btc-btn-secondary"
-          type="button"
-          @click="showCvPreview = !showCvPreview"
-        >
-          {{ showCvPreview ? 'Ẩn CV' : 'Hiện CV' }}
-        </button>
-      </div>
-      <div v-if="!cvUrl" class="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg">
-        <p>Please upload your CV first in <router-link to="/candidate/cv" class="font-semibold underline">CV Management</router-link></p>
-      </div>
-      <div v-else-if="showCvPreview">
-        <p v-if="cvPreviewError" class="mb-2 text-sm text-rose-600">{{ cvPreviewError }}</p>
-        <p v-else-if="cvPreviewLoading" class="text-sm">Đang tải CV...</p>
-        <PdfViewer v-else :pdfUrl="cvPreviewBlobUrl" />
-      </div>
-      <p v-else class="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-        CV đang được ẩn.
-      </p>
-    </div>
-
+    
     <div v-if="!aiAccessEnabled" class="btc-card max-w-2xl mb-6">
       <h3 class="text-lg font-semibold mb-2">Bạn chưa có quyền AI</h3>
       <p class="text-sm text-slate-600">Vui lòng mua gói AI ở trang “Gói AI đã mua” để sử dụng AI Review.</p>
@@ -532,9 +692,65 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
+    <!-- AI Review History -->
+    <div class="btc-card max-w-4xl mb-6">
+      <h3 class="text-lg font-semibold mb-4">Lịch sử AI review</h3>
+      <p v-if="reviewHistoryError" class="text-sm text-rose-600 mb-3">{{ reviewHistoryError }}</p>
+      <p v-if="reviewHistoryLoading" class="text-sm">Đang tải...</p>
+      <div v-else>
+        <p v-if="!reviewHistory.length" class="text-sm text-slate-600">Chưa có lần AI review nào.</p>
+        <div v-else class="space-y-3">
+          <div
+            v-for="r in reviewHistory"
+            :key="r.id"
+            class="border border-slate-200 rounded-lg"
+            :class="r.id === selectedHistoryId ? 'bg-slate-50' : ''"
+          >
+            <div class="p-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p class="font-semibold">
+                    {{ r.jobTitle || 'Job' }}
+                    <span class="text-xs text-slate-500" v-if="r.jobId">({{ r.jobId }})</span>
+                  </p>
+                  <p class="text-sm text-slate-600">
+                    Review lúc: {{ formatDate(r.createdAt) }} • Score: <span class="font-medium">{{ r.score }}</span>
+                  </p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button
+                    class="btc-btn-secondary"
+                    type="button"
+                    @click="openAndToggleHistory(r)"
+                  >
+                    {{ isHistoryExpanded(r.id) ? 'Ẩn' : 'Hiện' }}
+                  </button>
+                  <button
+                    class="btc-btn-primary"
+                    type="button"
+                    :disabled="loading"
+                    @click="reviewAgainFromHistory(r)"
+                  >
+                    Review lại
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="isHistoryExpanded(r.id)" class="border-t border-slate-200 p-4">
+              <p class="text-sm text-slate-600">
+                Đang hiển thị kết quả ở phần AI Review bên dưới.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Review Results -->
-    <div v-if="review" class="mt-6 space-y-6">
-      <!-- Score Card -->
+    <div v-if="review" ref="reviewResultsRef" class="mt-6 space-y-6">
+      
+      <!-- Score Card -->  
       <div class="btc-card max-w-2xl">
         <h3 class="text-lg font-semibold mb-4">Review Score</h3>
         <div class="flex items-center gap-8">
@@ -567,6 +783,36 @@ onBeforeUnmount(() => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+<!-- Summary (moved from History) -->
+      <div class="btc-card max-w-4xl">
+        <h3 class="text-lg font-semibold mb-2">Tóm tắt</h3>
+        <p class="text-sm text-slate-600">
+          {{ review.jobTitle || selectedJob?.title || 'Job' }}
+          <span v-if="review.createdAt"> • Review lúc: {{ formatDate(review.createdAt) }}</span>
+          <span v-if="typeof review.score === 'number'"> • Score: <span class="font-medium">{{ review.score }}</span></span>
+        </p>
+        <p class="text-sm text-slate-600 mt-2">
+          Missing keywords: <span class="font-medium">{{ (review.missingKeywords || []).length }}</span>
+          • Critical fixes: <span class="font-medium">{{ (review.criticalFixes || []).length }}</span>
+          • Suggestions: <span class="font-medium">{{ (review.tailoredSuggestions || []).length }}</span>
+        </p>
+        <div v-if="(review.missingKeywords || []).length" class="flex flex-wrap gap-2 mt-3">
+          <span
+            v-for="k in (review.missingKeywords || []).slice(0, 12)"
+            :key="k"
+            class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-700"
+          >
+            {{ k }}
+          </span>
+          <span
+            v-if="(review.missingKeywords || []).length > 12"
+            class="text-xs text-slate-500"
+          >
+            +{{ (review.missingKeywords || []).length - 12 }}
+          </span>
         </div>
       </div>
     </div>

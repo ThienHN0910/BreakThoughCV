@@ -4,8 +4,10 @@ import AppLayout from '../layouts/AppLayout.vue'
 import PdfViewer from '../components/PdfViewer.vue'
 import api from '../services/api'
 import { useAuthStore } from '../stores/auth'
+import { useNotificationsStore } from '../stores/notifications'
 
 const auth = useAuthStore()
+const notifications = useNotificationsStore()
 
 const cvFile = ref(null)
 const cvUrl = ref('')
@@ -15,6 +17,7 @@ const cvPreviewError = ref('')
 const error = ref('')
 const loading = ref(false)
 const hasCv = ref(false)
+const showFullCv = ref(false)
 
 function revokeCvPreviewUrl() {
   if (cvPreviewBlobUrl.value) {
@@ -30,6 +33,7 @@ async function loadCvPreview() {
   if (!auth.user?.userId) return
   if (!hasCv.value) {
     revokeCvPreviewUrl()
+    showFullCv.value = false
     return
   }
 
@@ -97,6 +101,13 @@ async function uploadCv() {
     hasCv.value = true
     cvFile.value = null
     await loadCvPreview()
+
+    notifications.add({
+      type: 'success',
+      title: 'Nộp CV thành công',
+      message: 'CV đã được tải lên và sẵn sàng để ứng tuyển / AI Review.',
+      href: '/candidate/cv'
+    })
   } catch (e) {
     error.value = e?.response?.data?.message || 'CV upload failed'
     console.error(e)
@@ -113,6 +124,7 @@ async function deleteCv() {
     await api.delete('/cv')
     cvUrl.value = ''
     hasCv.value = false
+    showFullCv.value = false
     error.value = ''
     revokeCvPreviewUrl()
   } catch (e) {
@@ -191,10 +203,25 @@ onBeforeUnmount(() => {
 
     <!-- CV Preview Section -->
     <div class="btc-card max-w-4xl">
-      <h3 class="text-lg font-semibold mb-4">CV Preview</h3>
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h3 class="text-lg font-semibold">CV Preview</h3>
+        <button
+          v-if="hasCv"
+          class="btc-btn-secondary"
+          type="button"
+          @click="showFullCv = !showFullCv"
+        >
+          {{ showFullCv ? 'Ẩn full CV' : 'Xem full CV' }}
+        </button>
+      </div>
       <p v-if="cvPreviewError" class="mb-2 text-sm text-rose-600">{{ cvPreviewError }}</p>
       <p v-if="cvPreviewLoading" class="text-sm">Đang tải CV...</p>
-      <PdfViewer v-else :pdfUrl="cvPreviewBlobUrl" :onDownload="hasCv ? downloadCv : null" />
+      <PdfViewer
+        v-else
+        :pdfUrl="cvPreviewBlobUrl"
+        :onDownload="hasCv ? downloadCv : null"
+        :maxHeight="showFullCv ? 'none' : 600"
+      />
     </div>
   </AppLayout>
 </template>
