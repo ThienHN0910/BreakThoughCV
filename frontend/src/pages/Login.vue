@@ -16,7 +16,8 @@ async function onGoogleCredentialResponse(response) {
         sessionStorage.setItem('welcomePending', new Date().toISOString())
       } catch {
       }
-    if (result.isNewUser || result.role === 'none') router.push('/select-role')
+    if (result.role === 'admin') router.push('/admin/users')
+    else if (result.isNewUser || result.role === 'none') router.push('/select-role')
     else router.push('/')
   } catch (e) {
     error.value = e?.response?.data?.message || 'Google login failed'

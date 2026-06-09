@@ -12,6 +12,7 @@ import ApplicationManagementPage from '../pages/ApplicationManagement.vue'
 import AIReviewPage from '../pages/AIReview.vue'
 import AiPurchaseHistoryPage from '../pages/AiPurchaseHistory.vue'
 import NotificationsPage from '../pages/Notifications.vue'
+import UserManagementPage from '../pages/admin/UserManagement.vue'
 
 const routes = [
   { path: '/login', component: LoginPage },
@@ -24,7 +25,8 @@ const routes = [
   { path: '/notifications', component: NotificationsPage, meta: { requiresAuth: true } },
   { path: '/recruiter/company', component: CompanyManagementPage, meta: { requiresAuth: true, role: 'recruiter' } },
   { path: '/recruiter/jobs', component: JobManagementPage, meta: { requiresAuth: true, role: 'recruiter' } },
-  { path: '/recruiter/applications', component: ApplicationManagementPage, meta: { requiresAuth: true, role: 'recruiter' } }
+  { path: '/recruiter/applications', component: ApplicationManagementPage, meta: { requiresAuth: true, role: 'recruiter' } },
+  { path: '/admin/users', component: UserManagementPage, meta: { requiresAuth: true, role: 'admin' } }
 ]
 
 const router = createRouter({

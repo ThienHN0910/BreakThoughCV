@@ -22,7 +22,11 @@ public class User
     public string? CvUrl { get; set; }
 
     [BsonElement("role")]
-    public string Role { get; set; } = "none"; // "none" | "candidate" | "recruiter"
+    public string Role { get; set; } = "none"; // "none" | "candidate" | "recruiter" | "admin"
+
+    [BsonElement("isActive")]
+    [BsonDefaultValue(true)]
+    public bool IsActive { get; set; } = true;
 
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

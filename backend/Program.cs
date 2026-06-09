@@ -1,8 +1,11 @@
 using System.Text;
+using BreakThroughCV.API.Models;
 using BreakThroughCV.API.Services;
 using BreakThroughCV.API.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +16,7 @@ builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection(
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 builder.Services.Configure<GeminiSettings>(builder.Configuration.GetSection("GeminiSettings"));
 builder.Services.Configure<PayOsSettings>(builder.Configuration.GetSection("PayOsSettings"));
+builder.Services.Configure<AdminSettings>(builder.Configuration.GetSection("AdminSettings"));
 
 // Services
 builder.Services.AddSingleton<MongoDbService>();
@@ -39,7 +43,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtSettings.Issuer,
             ValidAudience = jwtSettings.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
+            RoleClaimType = "role"
         };
     });
 
@@ -58,6 +63,20 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var adminSettings = scope.ServiceProvider.GetRequiredService<IOptions<AdminSettings>>().Value;
+    if (!string.IsNullOrWhiteSpace(adminSettings.BootstrapAdminEmail))
+    {
+        var db = scope.ServiceProvider.GetRequiredService<MongoDbService>();
+        var email = adminSettings.BootstrapAdminEmail.Trim();
+        db.Users.UpdateOneAsync(
+            u => u.Email == email,
+            Builders<User>.Update.Set(u => u.Role, "admin")
+        ).GetAwaiter().GetResult();
+    }
+}
 
 app.UseCors("AllowFrontend");
 app.UseAuthentication();

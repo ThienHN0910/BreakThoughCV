@@ -34,6 +34,9 @@ public class AuthController : ControllerBase
 
         var existingUser = await _db.Users.Find(u => u.Email == payload.Email).FirstOrDefaultAsync();
 
+        if (existingUser != null && !existingUser.IsActive)
+            return Unauthorized(new { message = "Tài khoản đã bị vô hiệu hóa" });
+
         if (existingUser == null)
         {
             var newUser = new User
@@ -80,6 +83,10 @@ public class AuthController : ControllerBase
 
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (userId == null) return Unauthorized();
+
+        var currentRole = User.FindFirst("role")?.Value;
+        if (currentRole == "admin")
+            return BadRequest(new { message = "Admin cannot change role via this endpoint" });
 
         var update = Builders<User>.Update.Set(u => u.Role, request.Role);
         var result = await _db.Users.UpdateOneAsync(u => u.Id == userId, update);

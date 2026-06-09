@@ -21,6 +21,13 @@ watch(
 const unreadNotifications = computed(() => notifications.unreadCount)
 
 const navItems = computed(() => {
+  if (auth.role === 'admin') {
+    return [
+      { to: '/admin/users', label: 'Người dùng' },
+      { to: '/', label: 'Tổng quan' }
+    ]
+  }
+
   if (auth.role === 'recruiter') {
     return [
       { to: '/recruiter/company', label: 'Công ty' },
