@@ -21,6 +21,7 @@ public class MongoDbService
     public IMongoCollection<Job> Jobs => _database.GetCollection<Job>("jobs");
     public IMongoCollection<Application> Applications => _database.GetCollection<Application>("applications");
     public IMongoCollection<CvReview> CvReviews => _database.GetCollection<CvReview>("cvReviews");
+    public IMongoCollection<WebsiteReview> WebsiteReviews => _database.GetCollection<WebsiteReview>("websiteReviews");
 
     public IMongoCollection<PaymentTransaction> PaymentTransactions => _database.GetCollection<PaymentTransaction>("paymentTransactions");
 }

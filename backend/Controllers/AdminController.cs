@@ -72,6 +72,24 @@ public class AdminController : ControllerBase
         return Ok(MapUser(user));
     }
 
+    [HttpGet("users/stats")]
+    public async Task<IActionResult> GetUserStats()
+    {
+        var totalUsers = (int)await _db.Users.CountDocumentsAsync(_ => true);
+        var candidateCount = (int)await _db.Users.CountDocumentsAsync(u => u.Role == "candidate");
+        var recruiterCount = (int)await _db.Users.CountDocumentsAsync(u => u.Role == "recruiter");
+        var adminCount = (int)await _db.Users.CountDocumentsAsync(u => u.Role == "admin");
+        var noneRoleCount = (int)await _db.Users.CountDocumentsAsync(u => u.Role == "none");
+
+        return Ok(new AdminUserStatsResponse(
+            TotalUsers: totalUsers,
+            CandidateCount: candidateCount,
+            RecruiterCount: recruiterCount,
+            AdminCount: adminCount,
+            NoneRoleCount: noneRoleCount
+        ));
+    }
+
     [HttpPut("users/{id}/role")]
     public async Task<IActionResult> UpdateRole(string id, [FromBody] AdminUpdateRoleRequest request)
     {
@@ -109,6 +127,36 @@ public class AdminController : ControllerBase
         return Ok(MapUser(user!));
     }
 
+    [HttpGet("website-reviews")]
+    public async Task<IActionResult> ListWebsiteReviews()
+    {
+        var reviews = await _db.WebsiteReviews
+            .Find(_ => true)
+            .SortByDescending(r => r.CreatedAt)
+            .ToListAsync();
+
+        var userIds = reviews.Select(r => r.UserId).Distinct().ToList();
+        var users = await _db.Users.Find(u => userIds.Contains(u.Id!)).ToListAsync();
+        var userMap = users.ToDictionary(u => u.Id!, u => u);
+
+        var items = reviews.Select(review =>
+        {
+            userMap.TryGetValue(review.UserId, out var user);
+            return new AdminWebsiteReviewResponse(
+                Id: review.Id!,
+                UserId: review.UserId,
+                UserName: user?.Name ?? "Unknown",
+                UserEmail: user?.Email ?? "Unknown",
+                UserRole: user?.Role ?? "unknown",
+                Rating: review.Rating,
+                Comment: review.Comment,
+                CreatedAt: review.CreatedAt
+            );
+        });
+
+        return Ok(items);
+    }
+
     private static AdminUserDto MapUser(User user)
     {
         var aiAccessEnabled = user.AiAccessPaidAt != null
@@ -122,6 +170,9 @@ public class AdminController : ControllerBase
             user.Role,
             user.IsActive,
             user.CreatedAt,
+            user.LastLoginAt,
+            user.CvUploadCount,
+            user.AiReviewCount,
             aiAccessEnabled,
             user.AiAccessExpiresAt
         );

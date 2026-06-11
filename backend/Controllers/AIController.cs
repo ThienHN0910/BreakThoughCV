@@ -148,6 +148,10 @@ public class AIController : ControllerBase
         };
 
         await _db.CvReviews.InsertOneAsync(cvReview);
+        await _db.Users.UpdateOneAsync(
+            u => u.Id == candidateId,
+            Builders<User>.Update.Inc(u => u.AiReviewCount, 1)
+        );
 
         return Ok(new CvReviewResponse(
             Id: cvReview.Id!,

@@ -31,6 +31,17 @@ public class User
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    [BsonElement("lastLoginAt")]
+    public DateTime? LastLoginAt { get; set; }
+
+    [BsonElement("cvUploadCount")]
+    [BsonDefaultValue(0)]
+    public int CvUploadCount { get; set; }
+
+    [BsonElement("aiReviewCount")]
+    [BsonDefaultValue(0)]
+    public int AiReviewCount { get; set; }
+
     [BsonElement("aiAccessPaidAt")]
     public DateTime? AiAccessPaidAt { get; set; }
 

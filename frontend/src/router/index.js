@@ -11,8 +11,10 @@ import JobManagementPage from '../pages/JobManagement.vue'
 import ApplicationManagementPage from '../pages/ApplicationManagement.vue'
 import AIReviewPage from '../pages/AIReview.vue'
 import AiPurchaseHistoryPage from '../pages/AiPurchaseHistory.vue'
+import WebsiteReviewPage from '../pages/WebsiteReview.vue'
 import NotificationsPage from '../pages/Notifications.vue'
 import UserManagementPage from '../pages/admin/UserManagement.vue'
+import WebsiteReviewManagementPage from '../pages/admin/WebsiteReviewManagement.vue'
 
 const routes = [
   { path: '/login', component: LoginPage },
@@ -22,11 +24,14 @@ const routes = [
   { path: '/candidate/cv', component: CVManagementPage, meta: { requiresAuth: true, role: 'candidate' } },
   { path: '/candidate/ai-review', component: AIReviewPage, meta: { requiresAuth: true, role: 'candidate' } },
   { path: '/candidate/ai-purchases', component: AiPurchaseHistoryPage, meta: { requiresAuth: true, role: 'candidate' } },
+  { path: '/candidate/review', component: WebsiteReviewPage, meta: { requiresAuth: true, role: 'candidate' } },
   { path: '/notifications', component: NotificationsPage, meta: { requiresAuth: true } },
   { path: '/recruiter/company', component: CompanyManagementPage, meta: { requiresAuth: true, role: 'recruiter' } },
   { path: '/recruiter/jobs', component: JobManagementPage, meta: { requiresAuth: true, role: 'recruiter' } },
   { path: '/recruiter/applications', component: ApplicationManagementPage, meta: { requiresAuth: true, role: 'recruiter' } },
-  { path: '/admin/users', component: UserManagementPage, meta: { requiresAuth: true, role: 'admin' } }
+  { path: '/recruiter/review', component: WebsiteReviewPage, meta: { requiresAuth: true, role: 'recruiter' } },
+  { path: '/admin/users', component: UserManagementPage, meta: { requiresAuth: true, role: 'admin' } },
+  { path: '/admin/reviews', component: WebsiteReviewManagementPage, meta: { requiresAuth: true, role: 'admin' } }
 ]
 
 const router = createRouter({

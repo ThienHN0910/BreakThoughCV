@@ -24,6 +24,7 @@ const navItems = computed(() => {
   if (auth.role === 'admin') {
     return [
       { to: '/admin/users', label: 'Người dùng' },
+      { to: '/admin/reviews', label: 'Đánh giá' },
       { to: '/', label: 'Tổng quan' }
     ]
   }
@@ -33,6 +34,7 @@ const navItems = computed(() => {
       { to: '/recruiter/company', label: 'Công ty' },
       { to: '/recruiter/jobs', label: 'Tuyển dụng' },
       { to: '/recruiter/applications', label: 'Ứng viên' },
+      { to: '/recruiter/review', label: 'Đánh giá' },
       { to: '/notifications', label: 'Thông báo' }
     ]
   }
@@ -42,6 +44,7 @@ const navItems = computed(() => {
     { to: '/candidate/cv', label: 'CV của tôi' },
     { to: '/candidate/ai-review', label: 'AI Review' },
     { to: '/candidate/ai-purchases', label: 'Gói AI đã mua' },
+    { to: '/candidate/review', label: 'Đánh giá' },
     { to: '/notifications', label: 'Thông báo' }
   ]
 })

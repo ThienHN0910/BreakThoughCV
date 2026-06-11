@@ -3,12 +3,15 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppLayout from '../layouts/AppLayout.vue'
 import { useAuthStore } from '../stores/auth'
+import api from '../services/api'
 import heroImage from '../assets/hero.png'
 
 const auth = useAuthStore()
 
 const showWelcome = ref(false)
 const fireCanvas = ref(null)
+const latestReviews = ref([])
+const reviewStats = ref({ totalReviews: 0, averageRating: 0 })
 let welcomeTimer = null
 let fireRaf = null
 let fireStopTimer = null
@@ -22,6 +25,29 @@ function startWelcomeTimer() {
     showWelcome.value = false
     welcomeTimer = null
   }, 3000)
+}
+
+async function loadLatestReviews() {
+  try {
+    const [{ data: reviewsData }, { data: statsData }] = await Promise.all([
+      api.get('/website-reviews', { params: { limit: 6 } }),
+      api.get('/website-reviews/stats')
+    ])
+    latestReviews.value = reviewsData || []
+    reviewStats.value = {
+      totalReviews: statsData.totalReviews || 0,
+      averageRating: statsData.averageRating || 0
+    }
+  } catch {
+    latestReviews.value = []
+    reviewStats.value = { totalReviews: 0, averageRating: 0 }
+  }
+}
+
+function roleLabel(role) {
+  if (role === 'candidate') return 'Ứng viên'
+  if (role === 'recruiter') return 'Nhà tuyển dụng'
+  return 'Người dùng'
 }
 
 function stopFireworks() {
@@ -131,6 +157,8 @@ function startFireworks() {
 }
 
 onMounted(() => {
+  loadLatestReviews()
+
   try {
     const pending = sessionStorage.getItem('welcomePending')
     if (!pending) return
@@ -307,6 +335,41 @@ const secondaryCta = computed(() => {
           </h3>
           <p class="text-sm" :style="{ color: 'var(--btc-muted)' }">{{ item.description }}</p>
         </RouterLink>
+      </div>
+    </div>
+
+    <!-- Website Reviews -->
+    <div v-if="latestReviews.length" class="mb-8">
+      <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 class="text-xl font-bold">Đánh giá từ người dùng</h2>
+          <p class="mt-1 text-sm" :style="{ color: 'var(--btc-muted)' }">
+            Tổng {{ reviewStats.totalReviews }} đánh giá, điểm trung bình {{ reviewStats.averageRating }} / 5.
+          </p>
+        </div>
+        <RouterLink
+          :to="auth.role === 'recruiter' ? '/recruiter/review' : '/candidate/review'"
+          class="btc-btn-secondary"
+        >
+          Gửi đánh giá
+        </RouterLink>
+      </div>
+
+      <div class="grid gap-4 md:grid-cols-3">
+        <div v-for="item in latestReviews" :key="item.id" class="btc-card">
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p class="font-semibold" :style="{ color: 'var(--btc-ink)' }">{{ item.userName }}</p>
+              <p class="text-xs" :style="{ color: 'var(--btc-muted)' }">{{ roleLabel(item.userRole) }}</p>
+            </div>
+            <div class="text-sm text-amber-500">
+              <span v-for="value in 5" :key="value">{{ value <= item.rating ? '★' : '☆' }}</span>
+            </div>
+          </div>
+          <p class="text-sm" :style="{ color: 'var(--btc-muted)' }">
+            {{ item.comment || 'Người dùng chưa để lại nhận xét.' }}
+          </p>
+        </div>
       </div>
     </div>
 

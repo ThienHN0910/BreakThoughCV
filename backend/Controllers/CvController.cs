@@ -153,7 +153,9 @@ public class CvController : ControllerBase
                 return StatusCode(500, new { message = "Failed to upload to storage provider" });
 
             var userId = GetUserId();
-            var update = Builders<Models.User>.Update.Set(u => u.CvUrl, uploadedUrl);
+            var update = Builders<Models.User>.Update
+                .Set(u => u.CvUrl, uploadedUrl)
+                .Inc(u => u.CvUploadCount, 1);
             var result = await _db.Users.UpdateOneAsync(u => u.Id == userId, update);
 
             if (result.ModifiedCount == 0)

@@ -5,6 +5,13 @@ import api from '../../services/api'
 
 const users = ref([])
 const total = ref(0)
+const stats = ref({
+  totalUsers: 0,
+  candidateCount: 0,
+  recruiterCount: 0,
+  adminCount: 0,
+  noneRoleCount: 0
+})
 const page = ref(1)
 const pageSize = ref(20)
 const search = ref('')
@@ -45,6 +52,27 @@ async function loadUsers() {
   }
 }
 
+async function loadStats() {
+  try {
+    const { data } = await api.get('/admin/users/stats')
+    stats.value = {
+      totalUsers: data.totalUsers || 0,
+      candidateCount: data.candidateCount || 0,
+      recruiterCount: data.recruiterCount || 0,
+      adminCount: data.adminCount || 0,
+      noneRoleCount: data.noneRoleCount || 0
+    }
+  } catch {
+    stats.value = {
+      totalUsers: 0,
+      candidateCount: 0,
+      recruiterCount: 0,
+      adminCount: 0,
+      noneRoleCount: 0
+    }
+  }
+}
+
 async function updateRole(user, newRole) {
   if (user.role === newRole) return
   try {
@@ -52,6 +80,7 @@ async function updateRole(user, newRole) {
     error.value = ''
     await api.put(`/admin/users/${user.id}/role`, { role: newRole })
     user.role = newRole
+    await loadStats()
   } catch (e) {
     error.value = e?.response?.data?.message || 'Không cập nhật được vai trò'
     await loadUsers()
@@ -73,16 +102,31 @@ async function toggleStatus(user) {
   }
 }
 
-function formatDate(value) {
-  if (!value) return '—'
-  return new Date(value).toLocaleDateString('vi-VN', {
+function formatDate(value, mode = 'date') {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+
+  if (mode === 'datetime') {
+    return date.toLocaleString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  return date.toLocaleDateString('vi-VN', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric'
   })
 }
 
-const totalPages = () => Math.max(1, Math.ceil(total.value / pageSize.value))
+function totalPages() {
+  return Math.max(1, Math.ceil(total.value / pageSize.value))
+}
 
 function goPage(next) {
   const max = totalPages()
@@ -104,6 +148,7 @@ watch(search, () => {
 })
 
 onMounted(loadUsers)
+onMounted(loadStats)
 </script>
 
 <template>
@@ -112,9 +157,32 @@ onMounted(loadUsers)
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 class="text-2xl font-bold">Quản lý người dùng</h2>
-          <p class="mt-1 text-sm text-slate-500">Xem, lọc và cập nhật vai trò người dùng trong hệ thống.</p>
+          <p class="mt-1 text-sm text-slate-500">Theo dõi tài khoản, vai trò, trạng thái và dữ liệu hoạt động.</p>
         </div>
-        <p class="text-sm font-semibold text-slate-600">Tổng: {{ total }} người dùng</p>
+       
+      </div>
+
+      <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Tổng người dùng</p>
+          <p class="mt-1 text-2xl font-bold text-slate-900">{{ stats.totalUsers }}</p>
+        </div>
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+          <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Ứng viên</p>
+          <p class="mt-1 text-2xl font-bold text-emerald-800">{{ stats.candidateCount }}</p>
+        </div>
+        <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <p class="text-xs font-semibold uppercase tracking-wide text-blue-700">Nhà tuyển dụng</p>
+          <p class="mt-1 text-2xl font-bold text-blue-800">{{ stats.recruiterCount }}</p>
+        </div>
+        <div class="rounded-xl border border-violet-200 bg-violet-50 p-4">
+          <p class="text-xs font-semibold uppercase tracking-wide text-violet-700">Admin</p>
+          <p class="mt-1 text-2xl font-bold text-violet-800">{{ stats.adminCount }}</p>
+        </div>
+        <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p class="text-xs font-semibold uppercase tracking-wide text-amber-700">Chưa chọn role</p>
+          <p class="mt-1 text-2xl font-bold text-amber-800">{{ stats.noneRoleCount }}</p>
+        </div>
       </div>
 
       <div class="mt-5 flex flex-col gap-3 md:flex-row">
@@ -143,6 +211,9 @@ onMounted(loadUsers)
               <th class="px-4 py-3">Người dùng</th>
               <th class="px-4 py-3">Vai trò</th>
               <th class="px-4 py-3">Trạng thái</th>
+              <th class="px-4 py-3">Đăng nhập cuối</th>
+              <th class="px-4 py-3">Upload CV</th>
+              <th class="px-4 py-3">AI Review</th>
               <th class="px-4 py-3">AI Access</th>
               <th class="px-4 py-3">Ngày tạo</th>
               <th class="px-4 py-3">Thao tác</th>
@@ -188,6 +259,17 @@ onMounted(loadUsers)
                   {{ user.isActive ? 'Hoạt động' : 'Vô hiệu' }}
                 </span>
               </td>
+              <td class="px-4 py-3 text-slate-600">{{ formatDate(user.lastLoginAt, 'datetime') }}</td>
+              <td class="px-4 py-3">
+                <span class="inline-flex rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+                  {{ user.cvUploadCount || 0 }} lần
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <span class="inline-flex rounded-lg bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">
+                  {{ user.aiReviewCount || 0 }} lần
+                </span>
+              </td>
               <td class="px-4 py-3">
                 <span
                   class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold"
@@ -209,7 +291,7 @@ onMounted(loadUsers)
               </td>
             </tr>
             <tr v-if="!loading && users.length === 0">
-              <td colspan="6" class="px-4 py-8 text-center text-slate-500">Không có người dùng phù hợp.</td>
+              <td colspan="9" class="px-4 py-8 text-center text-slate-500">Không có người dùng phù hợp.</td>
             </tr>
           </tbody>
         </table>

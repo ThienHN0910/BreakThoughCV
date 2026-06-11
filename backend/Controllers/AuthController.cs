@@ -39,13 +39,15 @@ public class AuthController : ControllerBase
 
         if (existingUser == null)
         {
+            var now = DateTime.UtcNow;
             var newUser = new User
             {
                 Email = payload.Email,
                 Name = payload.Name,
                 AvatarUrl = payload.Picture,
                 Role = "none",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = now,
+                LastLoginAt = now
             };
             await _db.Users.InsertOneAsync(newUser);
             var newUserToken = _jwtService.GenerateToken(newUser);
@@ -60,6 +62,12 @@ public class AuthController : ControllerBase
                 AiAccessEnabled: newUser.AiAccessPaidAt != null && (newUser.AiAccessExpiresAt == null || newUser.AiAccessExpiresAt > DateTime.UtcNow)
             ));
         }
+
+        existingUser.LastLoginAt = DateTime.UtcNow;
+        await _db.Users.UpdateOneAsync(
+            u => u.Id == existingUser.Id,
+            Builders<User>.Update.Set(u => u.LastLoginAt, existingUser.LastLoginAt)
+        );
 
         var token = _jwtService.GenerateToken(existingUser);
         return Ok(new AuthResponse(
