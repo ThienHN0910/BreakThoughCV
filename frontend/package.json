@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vercel/analytics": "^2.0.1",
+    "@vercel/analytics": "^2.0.2-canary",
     "axios": "^1.16.1",
     "pdfjs-dist": "^5.7.284",
     "pinia": "^3.0.4",
