@@ -6,14 +6,71 @@
 
 @layer base {
   :root {
-    --btc-bg-1: #f9fbff;
-    --btc-bg-2: #eef5ff;
-    --btc-ink: #132238;
-    --btc-muted: #5d728a;
-    --btc-primary: #0b5fff;
-    --btc-primary-2: #00b4d8;
-    --btc-surface: rgba(255, 255, 255, 0.9);
-    --btc-border: rgba(19, 34, 56, 0.12);
+    /* Base Variables - Light Mode */
+    --btc-bg-1: #f8fafc;
+    --btc-bg-2: #f1f5f9;
+    --btc-ink: #0f172a;
+    --btc-muted: #64748b;
+    --btc-primary: #4f46e5;
+    --btc-primary-2: #06b6d4;
+    --btc-surface: rgba(255, 255, 255, 0.75);
+    --btc-surface-hover: rgba(255, 255, 255, 0.95);
+    --btc-border: rgba(15, 23, 42, 0.08);
+    --btc-glass-border: rgba(255, 255, 255, 0.6);
+    --btc-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+    
+    /* Semantic Colors - Light Mode */
+    --btc-error-bg: #fff1f2;
+    --btc-error-border: #fecdd3;
+    --btc-error-text: #be123c;
+    --btc-warning-bg: #fffbeb;
+    --btc-warning-border: #fde68a;
+    --btc-warning-text: #b45309;
+    --btc-info-bg: #eff6ff;
+    --btc-info-border: #bfdbfe;
+    --btc-info-text: #1d4ed8;
+    --btc-success-bg: #f0fdf4;
+    --btc-success-border: #bbf7d0;
+    --btc-success-text: #15803d;
+    
+    --btc-bg-gradient: radial-gradient(circle at 0% 0%, rgba(79, 70, 229, 0.12), transparent 40%),
+                       radial-gradient(circle at 100% 100%, rgba(6, 182, 212, 0.12), transparent 40%),
+                       linear-gradient(135deg, var(--btc-bg-1), var(--btc-bg-2));
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* Base Variables - Dark Mode */
+      --btc-bg-1: #020617;
+      --btc-bg-2: #0f172a;
+      --btc-ink: #f8fafc;
+      --btc-muted: #94a3b8;
+      --btc-primary: #6366f1;
+      --btc-primary-2: #22d3ee;
+      --btc-surface: rgba(30, 41, 59, 0.6);
+      --btc-surface-hover: rgba(30, 41, 59, 0.9);
+      --btc-border: rgba(255, 255, 255, 0.08);
+      --btc-glass-border: rgba(255, 255, 255, 0.05);
+      --btc-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+
+      /* Semantic Colors - Dark Mode */
+      --btc-error-bg: rgba(225, 29, 72, 0.15);
+      --btc-error-border: rgba(244, 63, 94, 0.3);
+      --btc-error-text: #fda4af;
+      --btc-warning-bg: rgba(217, 119, 6, 0.15);
+      --btc-warning-border: rgba(245, 158, 11, 0.3);
+      --btc-warning-text: #fcd34d;
+      --btc-info-bg: rgba(37, 99, 235, 0.15);
+      --btc-info-border: rgba(59, 130, 246, 0.3);
+      --btc-info-text: #93c5fd;
+      --btc-success-bg: rgba(22, 163, 74, 0.15);
+      --btc-success-border: rgba(34, 197, 94, 0.3);
+      --btc-success-text: #86efac;
+
+      --btc-bg-gradient: radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15), transparent 40%),
+                         radial-gradient(circle at 100% 100%, rgba(34, 211, 238, 0.12), transparent 40%),
+                         linear-gradient(135deg, var(--btc-bg-1), var(--btc-bg-2));
+    }
   }
 
   html,
@@ -26,10 +83,9 @@
     @apply m-0;
     font-family: 'Manrope', 'Segoe UI', sans-serif;
     color: var(--btc-ink);
-    background:
-      radial-gradient(circle at 8% 12%, rgba(11, 95, 255, 0.16), transparent 45%),
-      radial-gradient(circle at 88% 18%, rgba(0, 180, 216, 0.15), transparent 40%),
-      linear-gradient(160deg, var(--btc-bg-1), var(--btc-bg-2));
+    background: var(--btc-bg-gradient);
+    background-attachment: fixed;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   h1,
@@ -46,46 +102,78 @@
   }
 
   .btc-card {
-    @apply rounded-2xl border p-4 md:p-5 shadow-sm;
+    @apply rounded-2xl border p-5 md:p-6 transition-all duration-300;
     background: var(--btc-surface);
     border-color: var(--btc-border);
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--btc-shadow);
+    border-top: 1px solid var(--btc-glass-border);
+    border-left: 1px solid var(--btc-glass-border);
+  }
+
+  .btc-card:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    background: var(--btc-surface-hover);
   }
 
   .btc-input {
-    @apply w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition;
+    @apply w-full rounded-xl border px-4 py-3 text-sm outline-none transition-all duration-300;
     border-color: var(--btc-border);
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--btc-surface);
+    color: var(--btc-ink);
   }
 
   .btc-input:focus {
-    border-color: rgba(11, 95, 255, 0.45);
-    box-shadow: 0 0 0 3px rgba(11, 95, 255, 0.12);
+    border-color: var(--btc-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    background: var(--btc-surface-hover);
   }
 
   .btc-btn-primary {
-    @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition;
-    background: linear-gradient(120deg, var(--btc-primary), var(--btc-primary-2));
+    @apply inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all duration-300 shadow-md;
+    background: linear-gradient(135deg, var(--btc-primary), var(--btc-primary-2));
+    background-size: 200% auto;
   }
 
   .btc-btn-primary:hover {
-    filter: brightness(1.04);
-    transform: translateY(-1px);
+    background-position: right center;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
   }
 
   .btc-btn-secondary {
-    @apply inline-flex items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-semibold transition;
+    @apply inline-flex items-center justify-center rounded-xl border px-5 py-2.5 text-sm font-semibold transition-all duration-300 shadow-sm;
     border-color: var(--btc-border);
     color: var(--btc-ink);
-    background: rgba(255, 255, 255, 0.88);
+    background: var(--btc-surface);
+  }
+
+  .btc-btn-secondary:hover {
+    background: var(--btc-surface-hover);
+    transform: translateY(-2px);
+    border-color: var(--btc-primary);
+    color: var(--btc-primary);
   }
 
   .btc-page-title {
-    @apply mb-2 text-2xl font-bold md:text-3xl;
+    @apply mb-3 text-3xl font-extrabold md:text-4xl;
+    background: linear-gradient(to right, var(--btc-ink), var(--btc-primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .btc-page-title {
+      background: linear-gradient(to right, #fff, var(--btc-primary-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
   }
 
   .btc-page-subtitle {
-    @apply mb-6 text-sm md:text-base;
+    @apply mb-8 text-base leading-relaxed md:text-lg;
     color: var(--btc-muted);
   }
 }

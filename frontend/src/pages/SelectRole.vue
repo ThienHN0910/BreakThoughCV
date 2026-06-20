@@ -25,14 +25,14 @@ async function chooseRole(role) {
   <div class="flex min-h-screen items-center justify-center px-4 py-8">
     <div class="btc-card w-full max-w-2xl md:p-8">
       <h2 class="text-3xl font-bold">Chọn vai trò</h2>
-      <p class="mb-6 mt-2 text-slate-500">Bạn muốn sử dụng Breakthrough CV với vai trò nào?</p>
+      <p class="mb-6 mt-2" :style="{ color: 'var(--btc-muted)' }">Bạn muốn sử dụng Breakthrough CV với vai trò nào?</p>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <button :disabled="loading" class="rounded-2xl border border-slate-200 bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-blue-300" @click="chooseRole('candidate')">
-          <p class="mb-1 text-sm font-semibold text-blue-700">Candidate</p>
+        <button :disabled="loading" class="rounded-2xl border p-5 text-left transition hover:-translate-y-0.5" :style="{ background: 'var(--btc-surface)', borderColor: 'var(--btc-border)', color: 'var(--btc-ink)' }" @click="chooseRole('candidate')">
+          <p class="mb-1 text-sm font-semibold" :style="{ color: 'var(--btc-primary)' }">Candidate</p>
           Người tìm việc
         </button>
-        <button :disabled="loading" class="rounded-2xl border border-slate-200 bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-cyan-300" @click="chooseRole('recruiter')">
-          <p class="mb-1 text-sm font-semibold text-cyan-700">Recruiter</p>
+        <button :disabled="loading" class="rounded-2xl border p-5 text-left transition hover:-translate-y-0.5" :style="{ background: 'var(--btc-surface)', borderColor: 'var(--btc-border)', color: 'var(--btc-ink)' }" @click="chooseRole('recruiter')">
+          <p class="mb-1 text-sm font-semibold" :style="{ color: 'var(--btc-primary-2)' }">Recruiter</p>
           Nhà tuyển dụng
         </button>
       </div>
