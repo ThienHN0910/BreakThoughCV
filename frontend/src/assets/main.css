@@ -38,8 +38,7 @@
                        linear-gradient(135deg, var(--btc-bg-1), var(--btc-bg-2));
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
+  :root.dark {
       /* Base Variables - Dark Mode */
       --btc-bg-1: #020617;
       --btc-bg-2: #0f172a;
@@ -70,7 +69,6 @@
       --btc-bg-gradient: radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15), transparent 40%),
                          radial-gradient(circle at 100% 100%, rgba(34, 211, 238, 0.12), transparent 40%),
                          linear-gradient(135deg, var(--btc-bg-1), var(--btc-bg-2));
-    }
   }
 
   html,
@@ -164,12 +162,10 @@
     -webkit-text-fill-color: transparent;
   }
 
-  @media (prefers-color-scheme: dark) {
-    .btc-page-title {
-      background: linear-gradient(to right, #fff, var(--btc-primary-2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+  html.dark .btc-page-title {
+    background: linear-gradient(to right, #fff, var(--btc-primary-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   .btc-page-subtitle {

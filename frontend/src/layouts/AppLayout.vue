@@ -1,5 +1,5 @@
 <script setup>
-import { computed, watch } from 'vue'
+import { computed, watch, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationsStore } from '../stores/notifications'
@@ -53,6 +53,23 @@ function logout() {
   auth.clearSession()
   router.push('/login')
 }
+
+const isDark = ref(false)
+
+onMounted(() => {
+  isDark.value = document.documentElement.classList.contains('dark')
+})
+
+function toggleTheme() {
+  isDark.value = !isDark.value
+  if (isDark.value) {
+    document.documentElement.classList.add('dark')
+    localStorage.setItem('btc-theme', 'dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+    localStorage.setItem('btc-theme', 'light')
+  }
+}
 </script>
 
 <template>
@@ -99,6 +116,15 @@ function logout() {
             </p>
             <p class="text-xs uppercase tracking-wide font-medium" :style="{ color: 'var(--btc-muted)' }">{{ auth.role }}</p>
           </div>
+          <button
+            @click="toggleTheme"
+            class="flex h-9 w-9 items-center justify-center rounded-xl border transition hover:-translate-y-0.5"
+            :style="{ background: 'var(--btc-surface)', borderColor: 'var(--btc-border)', color: 'var(--btc-ink)' }"
+            :title="isDark ? 'Chuyển sang nền sáng' : 'Chuyển sang nền tối'"
+          >
+            <span v-if="isDark">☀️</span>
+            <span v-else>🌙</span>
+          </button>
           <button class="btc-btn-secondary" @click="logout">Logout</button>
         </div>
       </div>

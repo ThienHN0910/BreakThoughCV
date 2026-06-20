@@ -7,6 +7,19 @@
     <meta name="google-site-verification" content="vjiR1Ii7gpoH1xRD8gHhs7jR3KJZ21ObEtbl4_k6hzw" />
     <title>Break Through CV </title>
     <script src="https://t.contentsquare.net/uxa/bd6f2ce0c5a21.js" defer></script>
+    <script>
+      (function() {
+        try {
+          var theme = localStorage.getItem('btc-theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (theme === 'dark' || (!theme && prefersDark)) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>
