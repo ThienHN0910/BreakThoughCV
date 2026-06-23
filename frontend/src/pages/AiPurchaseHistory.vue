@@ -177,14 +177,20 @@ onMounted(() => {
     <h2 class="btc-page-title">Gói AI đã mua</h2>
     <p class="btc-page-subtitle">Lịch sử thanh toán để sử dụng AI Review.</p>
 
-    <div class="btc-card max-w-4xl mb-6">
-      <h3 class="text-lg font-semibold mb-2">Trạng thái AI</h3>
-      <p v-if="aiAccessEnabled" class="text-sm text-teal-700">
-        Bạn đang có quyền sử dụng AI.
-        <span v-if="aiAccessExpiresAt">Hạn dùng đến: {{ formatDate(aiAccessExpiresAt) }}</span>
-        <span v-else>Hạn dùng: không giới hạn</span>
-      </p>
-      <p v-else class="text-sm text-slate-600">Bạn chưa có quyền AI. Hãy mua gói để sử dụng AI Review.</p>
+    <div class="btc-card max-w-4xl mb-6 bg-gradient-to-br from-indigo-50 to-white border-indigo-100">
+      <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
+        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+        Trạng thái AI
+      </h3>
+      <div v-if="aiAccessEnabled" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-100 border border-emerald-200 text-sm font-semibold text-emerald-800 mb-4">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        Đang kích hoạt
+        <span class="text-emerald-600 ml-1 font-medium text-xs">
+          (<span v-if="aiAccessExpiresAt">Hạn dùng: {{ formatDate(aiAccessExpiresAt) }}</span>
+          <span v-else>Không giới hạn</span>)
+        </span>
+      </div>
+      <p v-else class="text-sm font-medium text-slate-600 mb-4">Bạn chưa có quyền AI. Hãy mua gói để sử dụng tính năng AI Review mạnh mẽ.</p>
 
       <div class="mt-4 flex flex-wrap gap-3">
         <button
@@ -206,20 +212,21 @@ onMounted(() => {
         <label
           v-for="p in aiPlans"
           :key="p.key"
-          class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2"
+          class="flex items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all"
+          :class="selectedAiPlan === p.key ? 'border-indigo-500 bg-indigo-50/50 shadow-sm' : 'border-slate-100 bg-white hover:border-slate-200'"
         >
           <div class="flex items-center gap-3">
             <input
               type="radio"
               name="aiPlan"
-              class="accent-slate-900"
+              class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500 focus:ring-2 accent-indigo-600"
               :value="p.key"
               v-model="selectedAiPlan"
               :disabled="plansLoading || paymentLoading || paymentVerifying"
             />
-            <span class="text-sm font-semibold text-slate-800">{{ p.label }}</span>
+            <span class="text-base font-bold text-slate-800">{{ p.label }}</span>
           </div>
-          <span class="text-sm text-slate-600">{{ (p.amount || 0).toLocaleString() }} VND</span>
+          <span class="text-lg font-bold text-indigo-600">{{ (p.amount || 0).toLocaleString() }} <span class="text-xs text-slate-500 font-semibold uppercase">VND</span></span>
         </label>
 
         <p v-if="!aiPlans.length" class="text-sm text-slate-600">Không tải được danh sách gói. Hãy thử tải lại trang.</p>
@@ -241,45 +248,53 @@ onMounted(() => {
     </div>
 
     <div class="btc-card max-w-4xl">
-      <p v-if="error" class="text-sm text-rose-600 mb-3">{{ error }}</p>
-      <p v-if="loading" class="text-sm">Đang tải...</p>
+      <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+        <h3 class="text-lg font-bold text-slate-800">Lịch sử giao dịch</h3>
+      </div>
+      <p v-if="error" class="text-sm font-medium text-rose-600 mb-3">{{ error }}</p>
+      <div v-if="loading" class="flex items-center gap-2 text-sm text-slate-500 font-medium">
+        <svg class="animate-spin h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        Đang tải...
+      </div>
 
       <div v-else>
-        <p v-if="!items.length" class="text-sm text-slate-600">Chưa có giao dịch nào.</p>
+        <div v-if="!items.length" class="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-500 font-medium">
+          Chưa có giao dịch nào.
+        </div>
 
-        <div v-else class="overflow-x-auto">
-          <table class="min-w-full text-sm">
-            <thead>
-              <tr class="text-left text-slate-500 border-b border-slate-200">
-                <th class="py-2 pr-4">Mã đơn</th>
-                <th class="py-2 pr-4">Gói</th>
-                <th class="py-2 pr-4">Số tiền</th>
-                <th class="py-2 pr-4">Trạng thái</th>
-                <th class="py-2 pr-4">Tạo lúc</th>
-                <th class="py-2 pr-4">Thanh toán lúc</th>
-                <th class="py-2 pr-4">Hạn dùng</th>
+        <div v-else class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="min-w-full text-sm text-left whitespace-nowrap">
+            <thead class="bg-slate-50 text-slate-500 font-semibold uppercase text-xs">
+              <tr>
+                <th class="px-4 py-3 border-b border-slate-200">Mã đơn</th>
+                <th class="px-4 py-3 border-b border-slate-200">Gói</th>
+                <th class="px-4 py-3 border-b border-slate-200">Số tiền</th>
+                <th class="px-4 py-3 border-b border-slate-200">Trạng thái</th>
+                <th class="px-4 py-3 border-b border-slate-200">Ngày tạo</th>
+                <th class="px-4 py-3 border-b border-slate-200">Ngày thanh toán</th>
+                <th class="px-4 py-3 border-b border-slate-200">Hạn dùng</th>
               </tr>
             </thead>
-            <tbody>
-              <tr v-for="it in items" :key="it.orderCode" class="border-b border-slate-100">
-                <td class="py-2 pr-4 font-medium">{{ it.orderCode }}</td>
-                <td class="py-2 pr-4">{{ planLabel(it.plan) }}</td>
-                <td class="py-2 pr-4">{{ it.amount?.toLocaleString?.() || it.amount }} VND</td>
-                <td class="py-2 pr-4">
+            <tbody class="divide-y divide-slate-100 bg-white">
+              <tr v-for="it in items" :key="it.orderCode" class="hover:bg-slate-50/80 transition-colors">
+                <td class="px-4 py-3 font-semibold text-slate-800">#{{ it.orderCode }}</td>
+                <td class="px-4 py-3 text-slate-600 font-medium">{{ planLabel(it.plan) }}</td>
+                <td class="px-4 py-3 text-slate-800 font-bold">{{ it.amount?.toLocaleString?.() || it.amount }} <span class="text-[10px] text-slate-500">VND</span></td>
+                <td class="px-4 py-3">
                   <span
-                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold border"
                     :class="it.status === 'PAID'
-                      ? 'bg-teal-50 text-teal-700'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                       : it.status === 'CANCELLED'
-                        ? 'bg-rose-50 text-rose-700'
-                        : 'bg-slate-100 text-slate-700'"
+                        ? 'bg-rose-50 text-rose-700 border-rose-200'
+                        : 'bg-slate-50 text-slate-700 border-slate-200'"
                   >
                     {{ it.status }}
                   </span>
                 </td>
-                <td class="py-2 pr-4">{{ formatDate(it.createdAt) }}</td>
-                <td class="py-2 pr-4">{{ formatDate(it.paidAt) }}</td>
-                <td class="py-2 pr-4">{{ formatDate(it.accessToAt) }}</td>
+                <td class="px-4 py-3 text-slate-500 text-xs">{{ formatDate(it.createdAt) }}</td>
+                <td class="px-4 py-3 text-slate-500 text-xs">{{ formatDate(it.paidAt) || '-' }}</td>
+                <td class="px-4 py-3 text-slate-500 text-xs font-medium">{{ formatDate(it.accessToAt) || '-' }}</td>
               </tr>
             </tbody>
           </table>

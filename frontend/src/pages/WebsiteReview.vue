@@ -61,16 +61,16 @@ onMounted(loadReviews)
       <h2 class="btc-page-title">Đánh giá website</h2>
       <p class="btc-page-subtitle">Chia sẻ trải nghiệm của bạn để BreakThroughCV cải thiện tốt hơn.</p>
 
-      <div class="btc-card space-y-4">
+      <div class="btc-card space-y-5">
         <div>
-          <p class="mb-2 text-sm font-semibold text-slate-700">Mức độ hài lòng</p>
-          <div class="flex flex-wrap gap-2">
+          <p class="mb-3 text-sm font-semibold text-slate-700">Mức độ hài lòng</p>
+          <div class="flex flex-wrap gap-2.5">
             <button
               v-for="value in 5"
               :key="value"
               type="button"
-              class="h-11 w-11 rounded-xl border text-xl font-bold transition"
-              :class="value <= rating ? 'border-amber-300 bg-amber-100 text-amber-700' : 'border-slate-200 bg-white text-slate-300'"
+              class="h-12 w-12 rounded-xl border-2 text-2xl font-bold transition-all hover:-translate-y-0.5"
+              :class="value <= rating ? 'border-amber-400 bg-amber-50 text-amber-500 shadow-sm' : 'border-slate-100 bg-slate-50 text-slate-300 hover:border-slate-200'"
               @click="rating = value"
             >
               ★
@@ -83,35 +83,43 @@ onMounted(loadReviews)
           <textarea
             id="website-review-comment"
             v-model="comment"
-            class="btc-input min-h-32"
+            class="btc-input min-h-32 text-base"
             rows="5"
             placeholder="Bạn thích điều gì? Có điểm nào cần cải thiện?"
           ></textarea>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3">
-          <button class="btc-btn-primary" type="button" :disabled="saving" @click="submitReview">
+        <div class="flex flex-wrap items-center gap-4 pt-2 border-t border-slate-100">
+          <button class="btc-btn-primary px-6" type="button" :disabled="saving" @click="submitReview">
             {{ saving ? 'Đang gửi...' : 'Gửi đánh giá' }}
           </button>
-          <p v-if="success" class="text-sm text-green-700">{{ success }}</p>
-          <p v-if="error" class="text-sm text-rose-600">{{ error }}</p>
+          <div v-if="success" class="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-lg">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            {{ success }}
+          </div>
+          <p v-if="error" class="text-sm font-medium text-rose-600">{{ error }}</p>
         </div>
       </div>
 
-      <div class="mt-6">
-        <h3 class="mb-3 text-lg font-semibold">Đánh giá của bạn</h3>
-        <div v-if="loading" class="btc-card text-sm text-slate-600">Đang tải...</div>
-        <div v-else-if="!reviews.length" class="btc-card text-sm text-slate-600">Bạn chưa gửi đánh giá nào.</div>
-        <div v-else class="space-y-3">
-          <div v-for="item in reviews" :key="item.id" class="btc-card">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="text-amber-500">
+      <div class="mt-8">
+        <h3 class="mb-4 text-xl font-bold text-slate-800">Lịch sử đánh giá của bạn</h3>
+        <div v-if="loading" class="btc-card text-sm text-slate-500 font-medium flex items-center gap-2">
+          <svg class="animate-spin h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          Đang tải...
+        </div>
+        <div v-else-if="!reviews.length" class="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-500 font-medium">
+          Bạn chưa gửi đánh giá nào.
+        </div>
+        <div v-else class="grid gap-4 sm:grid-cols-2">
+          <div v-for="item in reviews" :key="item.id" class="btc-card hover:border-indigo-200 transition-colors">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-3">
+              <div class="text-amber-400 text-lg tracking-widest">
                 <span v-for="value in 5" :key="value">{{ value <= item.rating ? '★' : '☆' }}</span>
               </div>
-              <span class="text-xs text-slate-500">{{ formatDate(item.createdAt) }}</span>
+              <span class="text-xs font-medium text-slate-400 bg-slate-50 px-2 py-1 rounded-md">{{ formatDate(item.createdAt) }}</span>
             </div>
-            <p v-if="item.comment" class="mt-3 text-sm text-slate-700">{{ item.comment }}</p>
-            <p v-else class="mt-3 text-sm text-slate-500">Không có nhận xét.</p>
+            <p v-if="item.comment" class="text-sm text-slate-700 leading-relaxed">{{ item.comment }}</p>
+            <p v-else class="text-sm italic text-slate-400">Không có nhận xét.</p>
           </div>
         </div>
       </div>

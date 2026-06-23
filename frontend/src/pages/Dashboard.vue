@@ -255,14 +255,13 @@ const secondaryCta = computed(() => {
     <Transition name="btc-welcome">
       <div
         v-if="showWelcome"
-        class="btc-card relative mb-6 flex flex-wrap items-center justify-between gap-3 overflow-hidden"
+        class="btc-card relative mb-6 flex flex-wrap items-center justify-between gap-3 overflow-hidden bg-indigo-50/50 border-indigo-100"
         role="status"
-        :style="{ borderColor: 'var(--btc-border)', background: 'var(--btc-bg-2)' }"
       >
         <canvas ref="fireCanvas" class="btc-fireworks" aria-hidden="true"></canvas>
         <div>
-          <p class="text-sm font-semibold" :style="{ color: 'var(--btc-ink)' }">Chào mừng trở lại, {{ auth.user?.name || 'bạn' }}.</p>
-          <p class="text-xs" :style="{ color: 'var(--btc-muted)' }">Chúc bạn một ngày làm việc hiệu quả.</p>
+          <p class="text-sm font-semibold text-slate-800">Chào mừng trở lại, {{ auth.user?.name || 'bạn' }}.</p>
+          <p class="text-xs text-slate-500">Chúc bạn một ngày làm việc hiệu quả.</p>
         </div>
         <button class="btc-btn-secondary" type="button" @click="showWelcome = false">Đóng</button>
       </div>
@@ -311,8 +310,8 @@ const secondaryCta = computed(() => {
         :key="stat.label"
         class="btc-card"
       >
-        <p class="text-xs font-semibold uppercase tracking-wider" :style="{ color: 'var(--btc-muted)' }">{{ stat.label }}</p>
-        <p class="mt-1 text-3xl font-extrabold" :style="{ color: 'var(--btc-ink)' }">{{ stat.value }}</p>
+        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">{{ stat.label }}</p>
+        <p class="mt-1 text-3xl font-extrabold text-slate-800">{{ stat.value }}</p>
       </div>
     </div>
 
@@ -328,12 +327,12 @@ const secondaryCta = computed(() => {
         >
           <div class="flex items-start justify-between mb-3">
             <div class="text-4xl">{{ item.icon }}</div>
-            <div class="text-sm font-semibold" :style="{ color: 'var(--btc-muted)' }">→</div>
+            <div class="text-sm font-semibold text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">→</div>
           </div>
-          <h3 class="text-lg font-semibold mb-2" :style="{ color: 'var(--btc-ink)' }">
+          <h3 class="text-lg font-semibold mb-2 text-slate-800">
             {{ item.label }}
           </h3>
-          <p class="text-sm" :style="{ color: 'var(--btc-muted)' }">{{ item.description }}</p>
+          <p class="text-sm text-slate-500">{{ item.description }}</p>
         </RouterLink>
       </div>
     </div>
@@ -342,8 +341,8 @@ const secondaryCta = computed(() => {
     <div v-if="latestReviews.length" class="mb-8">
       <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 class="text-xl font-bold">Đánh giá từ người dùng</h2>
-          <p class="mt-1 text-sm" :style="{ color: 'var(--btc-muted)' }">
+          <h2 class="text-xl font-bold text-slate-800">Đánh giá từ người dùng</h2>
+          <p class="mt-1 text-sm text-slate-500">
             Tổng {{ reviewStats.totalReviews }} đánh giá, điểm trung bình {{ reviewStats.averageRating }} / 5.
           </p>
         </div>
@@ -359,14 +358,14 @@ const secondaryCta = computed(() => {
         <div v-for="item in latestReviews" :key="item.id" class="btc-card">
           <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p class="font-semibold" :style="{ color: 'var(--btc-ink)' }">{{ item.userName }}</p>
-              <p class="text-xs" :style="{ color: 'var(--btc-muted)' }">{{ roleLabel(item.userRole) }}</p>
+              <p class="font-semibold text-slate-800">{{ item.userName }}</p>
+              <p class="text-xs text-slate-500">{{ roleLabel(item.userRole) }}</p>
             </div>
             <div class="text-sm text-amber-500">
               <span v-for="value in 5" :key="value">{{ value <= item.rating ? '★' : '☆' }}</span>
             </div>
           </div>
-          <p class="text-sm" :style="{ color: 'var(--btc-muted)' }">
+          <p class="text-sm text-slate-600">
             {{ item.comment || 'Người dùng chưa để lại nhận xét.' }}
           </p>
         </div>
@@ -377,8 +376,8 @@ const secondaryCta = computed(() => {
     <div class="btc-card">
       <div class="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h3 class="text-lg font-semibold mb-1">Bắt đầu ngay</h3>
-          <p class="text-sm" :style="{ color: 'var(--btc-muted)' }">
+          <h3 class="text-lg font-semibold mb-1 text-slate-800">Bắt đầu ngay</h3>
+          <p class="text-sm text-slate-500">
             {{ auth.role === 'recruiter' ? 'Tạo tin tuyển dụng để tiếp cận ứng viên.' : 'Chọn job, review CV bằng AI và apply nhanh.' }}
           </p>
         </div>

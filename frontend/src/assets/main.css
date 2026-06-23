@@ -100,33 +100,34 @@
   }
 
   .btc-card {
-    @apply rounded-2xl border p-5 md:p-6 transition-all duration-300;
-    background: var(--btc-surface);
-    border-color: var(--btc-border);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: var(--btc-shadow);
-    border-top: 1px solid var(--btc-glass-border);
-    border-left: 1px solid var(--btc-glass-border);
+    @apply rounded-2xl border p-5 md:p-6 transition-all duration-300 shadow-sm bg-white;
+    border-color: #f1f5f9; /* slate-100 */
+  }
+
+  html.dark .btc-card {
+    @apply bg-slate-900 border-slate-800 shadow-none;
   }
 
   .btc-card:hover {
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    @apply shadow-md border-slate-200;
     transform: translateY(-2px);
-    background: var(--btc-surface-hover);
+  }
+
+  html.dark .btc-card:hover {
+    @apply border-slate-700;
   }
 
   .btc-input {
-    @apply w-full rounded-xl border px-4 py-3 text-sm outline-none transition-all duration-300;
-    border-color: var(--btc-border);
-    background: var(--btc-surface);
+    @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition-all duration-300;
     color: var(--btc-ink);
   }
 
+  html.dark .btc-input {
+    @apply bg-slate-800 border-slate-700;
+  }
+
   .btc-input:focus {
-    border-color: var(--btc-primary);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-    background: var(--btc-surface-hover);
+    @apply border-indigo-500 ring-2 ring-indigo-500/20;
   }
 
   .btc-btn-primary {
@@ -142,17 +143,21 @@
   }
 
   .btc-btn-secondary {
-    @apply inline-flex items-center justify-center rounded-xl border px-5 py-2.5 text-sm font-semibold transition-all duration-300 shadow-sm;
-    border-color: var(--btc-border);
+    @apply inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold transition-all duration-300 shadow-sm;
     color: var(--btc-ink);
-    background: var(--btc-surface);
+  }
+
+  html.dark .btc-btn-secondary {
+    @apply bg-slate-800 border-slate-700 text-slate-200;
   }
 
   .btc-btn-secondary:hover {
-    background: var(--btc-surface-hover);
+    @apply bg-slate-50 border-indigo-500 text-indigo-600;
     transform: translateY(-2px);
-    border-color: var(--btc-primary);
-    color: var(--btc-primary);
+  }
+
+  html.dark .btc-btn-secondary:hover {
+    @apply bg-slate-800 border-indigo-400 text-indigo-400;
   }
 
   .btc-page-title {

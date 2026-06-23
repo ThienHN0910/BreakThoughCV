@@ -532,7 +532,7 @@ onBeforeUnmount(() => {
     <p class="btc-page-subtitle">Upload CV để nhận gợi ý chỉnh sửa và điểm phù hợp với vị trí ứng tuyển.</p>
 
     <!-- Wanted Jobs (AI review first) -->
-    <div class="btc-card max-w-4xl mb-6">
+    <div class="bg-white shadow-sm rounded-2xl border border-slate-100 p-6 max-w-4xl mb-6">
       <h3 class="text-lg font-semibold mb-4">Việc bạn muốn apply (AI review trước)</h3>
       <p v-if="wantedActionError" class="text-sm text-rose-600 mb-3">{{ wantedActionError }}</p>
       <p v-if="!wantedJobIds.length" class="text-sm text-slate-600">Chưa thêm job nào từ trang Việc làm.</p>
@@ -572,7 +572,7 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Applied Jobs List -->
-    <div class="btc-card max-w-4xl mb-6">
+    <div class="bg-white shadow-sm rounded-2xl border border-slate-100 p-6 max-w-4xl mb-6">
       <h3 class="text-lg font-semibold mb-4">Việc bạn đã apply</h3>
       <p v-if="applicationsError" class="text-sm text-rose-600 mb-3">{{ applicationsError }}</p>
       <p v-if="applicationsLoading" class="text-sm">Đang tải...</p>
@@ -604,7 +604,7 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Job Selection Panel -->
-    <div class="btc-card max-w-2xl mb-6">
+    <div class="bg-white shadow-sm rounded-2xl border border-slate-100 p-6 max-w-2xl mb-6">
       <h3 class="text-lg font-semibold mb-4">Choose Job Position</h3>
       <p v-if="!wantedJobIds.length" class="text-sm text-slate-600 mb-3">
         Hãy thêm job ở trang Việc làm bằng nút “Muốn apply (AI review trước)” để chọn tại đây.
@@ -631,7 +631,7 @@ onBeforeUnmount(() => {
 
     <!-- CV Preview -->
     
-    <div v-if="!aiAccessEnabled" class="btc-card max-w-2xl mb-6">
+    <div v-if="!aiAccessEnabled" class="bg-white shadow-sm rounded-2xl border border-slate-100 p-6 max-w-2xl mb-6">
       <h3 class="text-lg font-semibold mb-2">Bạn chưa có quyền AI</h3>
       <p class="text-sm text-slate-600">Vui lòng mua gói AI ở trang “Gói AI đã mua” để sử dụng AI Review.</p>
       <div class="mt-4">
@@ -642,7 +642,7 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Action Buttons -->
-    <div class="btc-card max-w-2xl mb-6">
+    <div class="bg-white shadow-sm rounded-2xl border border-slate-100 p-6 max-w-2xl mb-6">
       <div class="flex gap-3 flex-wrap">
         <button
           class="btc-btn-secondary"
@@ -683,7 +683,7 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Job Suggestions -->
-    <div v-if="suggestions.length" class="btc-card max-w-4xl mb-6">
+    <div v-if="suggestions.length" class="bg-white shadow-sm rounded-2xl border border-slate-100 p-6 max-w-4xl mb-6">
       <h3 class="font-semibold mb-4">AI Job Recommendations</h3>
       <div class="space-y-2">
         <div v-for="(s, idx) in suggestions" :key="idx" class="bg-green-50 border border-green-200 p-3 rounded-lg">
@@ -693,7 +693,7 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- AI Review History -->
-    <div class="btc-card max-w-4xl mb-6">
+    <div class="bg-white shadow-sm rounded-2xl border border-slate-100 p-6 max-w-4xl mb-6">
       <h3 class="text-lg font-semibold mb-4">Lịch sử AI review</h3>
       <p v-if="reviewHistoryError" class="text-sm text-rose-600 mb-3">{{ reviewHistoryError }}</p>
       <p v-if="reviewHistoryLoading" class="text-sm">Đang tải...</p>
@@ -751,35 +751,45 @@ onBeforeUnmount(() => {
     <div v-if="review" ref="reviewResultsRef" class="mt-6 space-y-6">
       
       <!-- Score Card -->  
-      <div class="btc-card max-w-2xl">
+      <div class="bg-white shadow-sm rounded-2xl border border-slate-100 p-6 max-w-2xl">
         <h3 class="text-lg font-semibold mb-4">Review Score</h3>
         <div class="flex items-center gap-8">
           <CircleScore :score="review.score" />
           <div class="flex-1">
             <h4 class="font-semibold mb-3">Missing Keywords</h4>
-            <div class="space-y-1">
-              <p v-for="k in review.missingKeywords" :key="k" class="text-sm bg-red-50 text-red-700 px-3 py-1 rounded">
-                • {{ k }}
-              </p>
+            <div class="flex flex-wrap gap-2">
+              <span v-for="k in review.missingKeywords" :key="k" class="inline-flex items-center gap-1.5 bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-sm font-medium border border-red-100">
+                <svg class="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                {{ k }}
+              </span>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Suggestions -->
-      <div class="btc-card max-w-4xl">
+      <div class="bg-white shadow-sm rounded-2xl border border-slate-100 p-6 max-w-4xl">
         <h3 class="font-semibold mb-4">AI Suggestions</h3>
         <div class="space-y-4">
-          <div v-for="(s, idx) in review.tailoredSuggestions" :key="idx" class="border border-slate-200 rounded-lg overflow-hidden">
-            <div class="bg-slate-100 px-4 py-2 font-medium">{{ s.section }}</div>
-            <div class="grid md:grid-cols-2 gap-0">
-              <div class="p-4 border-r border-slate-200">
-                <p class="text-xs font-semibold text-slate-600 mb-2">Original</p>
-                <p class="text-sm whitespace-pre-wrap bg-slate-50 p-3 rounded">{{ s.originalText }}</p>
+          <div v-for="(s, idx) in review.tailoredSuggestions" :key="idx" class="border border-slate-100 rounded-2xl overflow-hidden shadow-sm bg-white mb-4">
+            <div class="bg-slate-50 px-5 py-3 font-semibold text-slate-700 border-b border-slate-100 flex items-center gap-2">
+              <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              {{ s.section }}
+            </div>
+            <div class="grid md:grid-cols-2 gap-4 p-5">
+              <div class="rounded-xl bg-slate-50 p-4 border border-slate-100">
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-2 h-2 rounded-full bg-slate-400"></div>
+                  <p class="text-sm font-semibold text-slate-600">Bản cũ</p>
+                </div>
+                <p class="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{{ s.originalText }}</p>
               </div>
-              <div class="p-4">
-                <p class="text-xs font-semibold text-teal-700 mb-2">Suggested</p>
-                <p class="text-sm whitespace-pre-wrap bg-teal-50 p-3 rounded">{{ s.suggestedText }}</p>
+              <div class="rounded-xl bg-emerald-50/40 p-4 border border-emerald-100 shadow-sm">
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                  <p class="text-sm font-semibold text-emerald-700">Gợi ý mới (AI)</p>
+                </div>
+                <p class="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">{{ s.suggestedText }}</p>
               </div>
             </div>
           </div>
@@ -787,7 +797,7 @@ onBeforeUnmount(() => {
       </div>
 
 <!-- Summary (moved from History) -->
-      <div class="btc-card max-w-4xl">
+      <div class="bg-white shadow-sm rounded-2xl border border-slate-100 p-6 max-w-4xl">
         <h3 class="text-lg font-semibold mb-2">Tóm tắt</h3>
         <p class="text-sm text-slate-600">
           {{ review.jobTitle || selectedJob?.title || 'Job' }}
@@ -803,13 +813,14 @@ onBeforeUnmount(() => {
           <span
             v-for="k in (review.missingKeywords || []).slice(0, 12)"
             :key="k"
-            class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-700"
+            class="inline-flex items-center gap-1 bg-red-50 text-red-600 px-2 py-1 rounded-md text-xs font-medium border border-red-100"
           >
+            <svg class="w-3 h-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             {{ k }}
           </span>
           <span
             v-if="(review.missingKeywords || []).length > 12"
-            class="text-xs text-slate-500"
+            class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-600"
           >
             +{{ (review.missingKeywords || []).length - 12 }}
           </span>

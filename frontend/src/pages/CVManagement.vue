@@ -159,7 +159,7 @@ onBeforeUnmount(() => {
     <div class="btc-card max-w-2xl mb-8">
       <h3 class="text-lg font-semibold mb-4">Upload CV</h3>
       <div class="space-y-4">
-        <div class="border-2 border-dashed border-blue-200 rounded-lg p-6 text-center">
+        <div class="border-2 border-dashed border-indigo-200 bg-slate-50/50 hover:bg-slate-50 transition-colors rounded-2xl p-8 text-center">
           <input
             type="file"
             accept=".pdf"
@@ -167,18 +167,20 @@ onBeforeUnmount(() => {
             class="hidden"
             id="cv-file-input"
           />
-          <label for="cv-file-input" class="cursor-pointer">
-            <div class="text-gray-600">
-              <p class="font-medium">Click to upload or drag and drop</p>
-              <p class="text-sm text-gray-500">PDF files only, max 5MB</p>
+          <label for="cv-file-input" class="cursor-pointer block">
+            <div class="text-slate-600 flex flex-col items-center gap-2">
+              <svg class="w-10 h-10 text-indigo-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+              <p class="font-semibold text-slate-700">Click to upload or drag and drop</p>
+              <p class="text-sm text-slate-500">PDF files only, max 5MB</p>
             </div>
           </label>
-          <p v-if="cvFile" class="mt-2 text-sm text-green-600">
-            ✓ Selected: {{ cvFile.name }}
-          </p>
+          <div v-if="cvFile" class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium border border-emerald-200">
+            <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            {{ cvFile.name }}
+          </div>
         </div>
 
-        <div class="flex gap-3">
+        <div class="flex flex-wrap gap-3 mt-2">
           <button
             class="btc-btn-primary"
             :disabled="loading || !cvFile"
@@ -188,7 +190,7 @@ onBeforeUnmount(() => {
           </button>
           <button
             v-if="hasCv"
-            class="btc-btn-secondary"
+            class="btc-btn-secondary !text-rose-600 !border-rose-200 hover:!bg-rose-50"
             :disabled="loading"
             @click="deleteCv"
           >
@@ -196,18 +198,21 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <p v-if="error" class="text-sm text-rose-600">{{ error }}</p>
-        <p v-if="hasCv && !error" class="text-sm text-green-600">✓ CV uploaded successfully</p>
+        <p v-if="error" class="text-sm text-rose-600 font-medium">{{ error }}</p>
+        <div v-if="hasCv && !error" class="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 mt-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          CV uploaded successfully
+        </div>
       </div>
     </div>
 
     <!-- CV Preview Section -->
     <div class="btc-card max-w-4xl">
       <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h3 class="text-lg font-semibold">CV Preview</h3>
+        <h3 class="text-lg font-semibold text-slate-800">CV Preview</h3>
         <button
           v-if="hasCv"
-          class="btc-btn-secondary"
+          class="btc-btn-secondary !py-1.5 !px-3 text-sm"
           type="button"
           @click="showFullCv = !showFullCv"
         >

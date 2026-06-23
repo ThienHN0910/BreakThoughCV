@@ -162,39 +162,44 @@ onMounted(loadStats)
        
       </div>
 
-      <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Tổng người dùng</p>
-          <p class="mt-1 text-2xl font-bold text-slate-900">{{ stats.totalUsers }}</p>
+      <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Tổng người dùng</p>
+          <p class="text-3xl font-extrabold text-slate-900">{{ stats.totalUsers }}</p>
         </div>
-        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-          <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Ứng viên</p>
-          <p class="mt-1 text-2xl font-bold text-emerald-800">{{ stats.candidateCount }}</p>
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm hover:shadow-md transition-shadow">
+          <p class="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-1">Ứng viên</p>
+          <p class="text-3xl font-extrabold text-emerald-800">{{ stats.candidateCount }}</p>
         </div>
-        <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
-          <p class="text-xs font-semibold uppercase tracking-wide text-blue-700">Nhà tuyển dụng</p>
-          <p class="mt-1 text-2xl font-bold text-blue-800">{{ stats.recruiterCount }}</p>
+        <div class="rounded-2xl border border-blue-200 bg-blue-50 p-5 shadow-sm hover:shadow-md transition-shadow">
+          <p class="text-xs font-bold uppercase tracking-wider text-blue-700 mb-1">Nhà tuyển dụng</p>
+          <p class="text-3xl font-extrabold text-blue-800">{{ stats.recruiterCount }}</p>
         </div>
-        <div class="rounded-xl border border-violet-200 bg-violet-50 p-4">
-          <p class="text-xs font-semibold uppercase tracking-wide text-violet-700">Admin</p>
-          <p class="mt-1 text-2xl font-bold text-violet-800">{{ stats.adminCount }}</p>
+        <div class="rounded-2xl border border-violet-200 bg-violet-50 p-5 shadow-sm hover:shadow-md transition-shadow">
+          <p class="text-xs font-bold uppercase tracking-wider text-violet-700 mb-1">Admin</p>
+          <p class="text-3xl font-extrabold text-violet-800">{{ stats.adminCount }}</p>
         </div>
-        <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <p class="text-xs font-semibold uppercase tracking-wide text-amber-700">Chưa chọn role</p>
-          <p class="mt-1 text-2xl font-bold text-amber-800">{{ stats.noneRoleCount }}</p>
+        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm hover:shadow-md transition-shadow">
+          <p class="text-xs font-bold uppercase tracking-wider text-amber-700 mb-1">Chưa chọn role</p>
+          <p class="text-3xl font-extrabold text-amber-800">{{ stats.noneRoleCount }}</p>
         </div>
       </div>
 
-      <div class="mt-5 flex flex-col gap-3 md:flex-row">
-        <input
-          v-model="search"
-          type="search"
-          placeholder="Tìm theo email hoặc tên..."
-          class="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm outline-none focus:border-slate-400 md:max-w-sm"
-        />
+      <div class="mt-8 flex flex-col gap-4 md:flex-row items-center">
+        <div class="relative w-full md:max-w-sm">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+          <input
+            v-model="search"
+            type="search"
+            placeholder="Tìm theo email hoặc tên..."
+            class="w-full rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+          />
+        </div>
         <select
           v-model="roleFilter"
-          class="rounded-xl border border-slate-200 px-4 py-2 text-sm outline-none focus:border-slate-400"
+          class="w-full md:w-auto rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
         >
           <option value="">Tất cả vai trò</option>
           <option v-for="opt in roleOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
@@ -204,23 +209,23 @@ onMounted(loadStats)
       <p v-if="error" class="mt-4 text-sm text-rose-600">{{ error }}</p>
       <p v-if="loading" class="mt-4 text-sm text-slate-500">Đang tải...</p>
 
-      <div class="mt-5 overflow-x-auto rounded-xl border border-slate-200">
-        <table class="min-w-full text-left text-sm">
-          <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+      <div class="mt-6 overflow-x-auto rounded-xl border border-slate-200">
+        <table class="min-w-full text-left text-sm whitespace-nowrap">
+          <thead class="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
             <tr>
-              <th class="px-4 py-3">Người dùng</th>
-              <th class="px-4 py-3">Vai trò</th>
-              <th class="px-4 py-3">Trạng thái</th>
-              <th class="px-4 py-3">Đăng nhập cuối</th>
-              <th class="px-4 py-3">Upload CV</th>
-              <th class="px-4 py-3">AI Review</th>
-              <th class="px-4 py-3">AI Access</th>
-              <th class="px-4 py-3">Ngày tạo</th>
-              <th class="px-4 py-3">Thao tác</th>
+              <th class="px-5 py-3">Người dùng</th>
+              <th class="px-5 py-3">Vai trò</th>
+              <th class="px-5 py-3">Trạng thái</th>
+              <th class="px-5 py-3">Đăng nhập cuối</th>
+              <th class="px-5 py-3 text-center">Upload CV</th>
+              <th class="px-5 py-3 text-center">AI Review</th>
+              <th class="px-5 py-3 text-center">AI Access</th>
+              <th class="px-5 py-3">Ngày tạo</th>
+              <th class="px-5 py-3 text-right">Thao tác</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="user in users" :key="user.id" class="border-t border-slate-100">
+          <tbody class="divide-y divide-slate-100 bg-white">
+            <tr v-for="user in users" :key="user.id" class="hover:bg-slate-50/80 transition-colors">
               <td class="px-4 py-3">
                 <div class="flex items-center gap-3">
                   <img
@@ -241,48 +246,48 @@ onMounted(loadStats)
                   </div>
                 </div>
               </td>
-              <td class="px-4 py-3">
+              <td class="px-5 py-4">
                 <select
                   :value="user.role"
                   :disabled="updatingId === user.id"
-                  class="rounded-lg border border-slate-200 px-2 py-1 text-xs outline-none focus:border-slate-400"
+                  class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium bg-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
                   @change="updateRole(user, $event.target.value)"
                 >
                   <option v-for="opt in roleOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                 </select>
               </td>
-              <td class="px-4 py-3">
+              <td class="px-5 py-4">
                 <span
-                  class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold"
-                  :class="user.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'"
+                  class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider border"
+                  :class="user.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'"
                 >
                   {{ user.isActive ? 'Hoạt động' : 'Vô hiệu' }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-slate-600">{{ formatDate(user.lastLoginAt, 'datetime') }}</td>
-              <td class="px-4 py-3">
-                <span class="inline-flex rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
-                  {{ user.cvUploadCount || 0 }} lần
+              <td class="px-5 py-4 text-slate-500 font-medium text-xs">{{ formatDate(user.lastLoginAt, 'datetime') }}</td>
+              <td class="px-5 py-4 text-center">
+                <span class="inline-flex items-center justify-center min-w-[2.5rem] rounded-md bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600 border border-slate-200">
+                  {{ user.cvUploadCount || 0 }}
                 </span>
               </td>
-              <td class="px-4 py-3">
-                <span class="inline-flex rounded-lg bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">
-                  {{ user.aiReviewCount || 0 }} lần
+              <td class="px-5 py-4 text-center">
+                <span class="inline-flex items-center justify-center min-w-[2.5rem] rounded-md bg-indigo-50 px-2 py-1 text-xs font-bold text-indigo-700 border border-indigo-100">
+                  {{ user.aiReviewCount || 0 }}
                 </span>
               </td>
-              <td class="px-4 py-3">
+              <td class="px-5 py-4 text-center">
                 <span
-                  class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold"
-                  :class="user.aiAccessEnabled ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'"
+                  class="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider border"
+                  :class="user.aiAccessEnabled ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-slate-50 text-slate-500 border-slate-200'"
                 >
                   {{ user.aiAccessEnabled ? 'Có' : 'Không' }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-slate-600">{{ formatDate(user.createdAt) }}</td>
-              <td class="px-4 py-3">
+              <td class="px-5 py-4 text-slate-500 font-medium text-xs">{{ formatDate(user.createdAt) }}</td>
+              <td class="px-5 py-4 text-right">
                 <button
-                  class="rounded-lg px-3 py-1 text-xs font-semibold transition"
-                  :class="user.isActive ? 'bg-rose-50 text-rose-700 hover:bg-rose-100' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'"
+                  class="rounded-lg px-3 py-1.5 text-xs font-bold transition-colors border"
+                  :class="user.isActive ? 'bg-white border-rose-200 text-rose-600 hover:bg-rose-50' : 'bg-white border-emerald-200 text-emerald-600 hover:bg-emerald-50'"
                   :disabled="updatingId === user.id"
                   @click="toggleStatus(user)"
                 >
