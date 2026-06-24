@@ -208,29 +208,70 @@ onMounted(() => {
       <h3 class="text-lg font-semibold mb-2">Mua gói AI</h3>
       <p class="text-sm text-slate-600">Chọn gói cước và thanh toán qua PayOS.</p>
 
-      <div class="mt-4 space-y-2">
+      <div class="mt-6 grid gap-5 md:grid-cols-3 pt-2">
         <label
           v-for="p in aiPlans"
           :key="p.key"
-          class="flex items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all"
-          :class="selectedAiPlan === p.key ? 'border-indigo-500 bg-indigo-50/50 shadow-sm' : 'border-slate-100 bg-white hover:border-slate-200'"
+          class="relative flex flex-col justify-between rounded-2xl border-2 p-5 cursor-pointer transition-all"
+          :class="selectedAiPlan === p.key ? 'border-indigo-500 bg-indigo-50/40 shadow-md transform -translate-y-1' : 'border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm'"
         >
-          <div class="flex items-center gap-3">
-            <input
-              type="radio"
-              name="aiPlan"
-              class="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500 focus:ring-2 accent-indigo-600"
-              :value="p.key"
-              v-model="selectedAiPlan"
-              :disabled="plansLoading || paymentLoading || paymentVerifying"
-            />
-            <span class="text-base font-bold text-slate-800">{{ p.label }}</span>
+          <div v-if="p.key === 'MONTH'" class="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-500 text-white px-3 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm whitespace-nowrap">
+            Phổ biến nhất
           </div>
-          <span class="text-lg font-bold text-indigo-600">{{ (p.amount || 0).toLocaleString() }} <span class="text-xs text-slate-500 font-semibold uppercase">VND</span></span>
-        </label>
+          <div v-if="p.key === 'YEAR'" class="absolute -top-3 left-1/2 -translate-x-1/2 bg-rose-500 text-white px-3 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm whitespace-nowrap">
+            Tiết kiệm nhất
+          </div>
+          
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-lg font-extrabold text-slate-800">{{ p.label }}</span>
+              <input
+                type="radio"
+                name="aiPlan"
+                class="w-5 h-5 text-indigo-600 border-slate-300 focus:ring-indigo-500 focus:ring-2 accent-indigo-600"
+                :value="p.key"
+                v-model="selectedAiPlan"
+                :disabled="plansLoading || paymentLoading || paymentVerifying"
+              />
+            </div>
+            
+            <p class="text-sm text-slate-500 mb-4 min-h-[40px] leading-relaxed">
+              <template v-if="p.key === 'WEEK'">Trải nghiệm sức mạnh của AI Review trong vòng 7 ngày.</template>
+              <template v-else-if="p.key === 'MONTH'">Lựa chọn lý tưởng cho một chiến dịch tìm việc tiêu chuẩn.</template>
+              <template v-else-if="p.key === 'YEAR'">Tối ưu chi phí, sử dụng AI không giới hạn trong cả năm.</template>
+              <template v-else>Truy cập tính năng phân tích CV bằng AI.</template>
+            </p>
 
-        <p v-if="!aiPlans.length" class="text-sm text-slate-600">Không tải được danh sách gói. Hãy thử tải lại trang.</p>
+            <ul class="mb-6 space-y-2 text-sm text-slate-600">
+              <template v-if="p.key === 'WEEK'">
+                <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 10 lần dùng AI Review / ngày</li>
+                <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> AI phân tích và chấm điểm CV</li>
+              </template>
+              <template v-else-if="p.key === 'MONTH'">
+                <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 50 lần dùng AI Review / ngày</li>
+                <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Gợi ý từ khóa AI thông minh</li>
+                <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Phân tích kỹ năng còn thiếu</li>
+              </template>
+              <template v-else-if="p.key === 'YEAR'">
+                <li class="flex items-center gap-2 font-semibold text-slate-800"><svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Dùng AI Review không giới hạn</li>
+                <li class="flex items-center gap-2"><svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Gợi ý từ khóa AI chuyên sâu</li>
+                <li class="flex items-center gap-2"><svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Phân tích kỹ năng chi tiết nhất</li>
+                <li class="flex items-center gap-2"><svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Ưu tiên cập nhật tính năng mới</li>
+              </template>
+              <template v-else>
+                <li class="flex items-center gap-2"><svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Sử dụng AI Review</li>
+              </template>
+            </ul>
+          </div>
+          
+          <div class="pt-4 border-t" :class="selectedAiPlan === p.key ? 'border-indigo-200/50' : 'border-slate-100'">
+            <span class="text-2xl font-extrabold text-indigo-600">{{ (p.amount || 0).toLocaleString() }}</span>
+            <span class="text-xs font-bold text-slate-400 uppercase ml-1">VND</span>
+          </div>
+        </label>
       </div>
+      
+      <p v-if="!aiPlans.length" class="text-sm text-slate-600 mt-4">Không tải được danh sách gói. Hãy thử tải lại trang.</p>
 
       <div class="mt-4 flex flex-wrap gap-3">
         <button
