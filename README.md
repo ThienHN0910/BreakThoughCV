@@ -1,10 +1,10 @@
 # BreakThoughCV
 
-[![Case Study](https://img.shields.io/badge/Case_Study-BreakThroughCV-007ACC?style=flat-square&logo=vercel)](https://thienhn0910.vercel.app/projects/breakthroughcv-aipowered-job-candidate-cv-optimization-platform)
-[![Author](https://img.shields.io/badge/Author-ThienHN-4FC08D?style=flat-square)](https://thienhn0910.vercel.app/)
+[![Case Study](https://img.shields.io/badge/Case_Study-BreakThroughCV-007ACC?style=flat-square&logo=vercel)](https://thienhn.io.vn/projects/breakthroughcv-aipowered-job-candidate-cv-optimization-platform)
+[![Author](https://img.shields.io/badge/Author-ThienHN-4FC08D?style=flat-square)](https://thienhn.io.vn/)
 
 > **BreakThroughCV** là nền tảng tối ưu hóa CV ứng viên ứng dụng trí tuệ nhân tạo (AI-Powered Job Candidate CV Optimization Platform), kết hợp backend .NET 8 Web API, MongoDB, Google Gemini AI và frontend Vue 3.  
-> Được thiết kế và phát triển bởi [ThienHN](https://thienhn0910.vercel.app/).
+> Được thiết kế và phát triển bởi [ThienHN](https://thienhn.io.vn/).
 
 ## Structure
 - `backend/`: .NET 8 Web API + MongoDB + Cloudinary + Gemini
@@ -40,6 +40,6 @@
 
 ## 🌐 Case Study & Showcase
 
-- 📌 **Chi tiết Case Study dự án**: [BreakThroughCV — AI-Powered Job Candidate CV Optimization Platform](https://thienhn0910.vercel.app/projects/breakthroughcv-aipowered-job-candidate-cv-optimization-platform)
-- 👨‍💻 **Portfolio tác giả**: [ThienHN (thienhn0910.vercel.app)](https://thienhn0910.vercel.app/) | [Xem CV trực tuyến](https://thienhn0910.vercel.app/cv)
-- 🚀 **Khám phá thêm dự án khác**: [Portfolio Projects Showcase](https://thienhn0910.vercel.app/projects)
+- 📌 **Chi tiết Case Study dự án**: [BreakThroughCV — AI-Powered Job Candidate CV Optimization Platform](https://thienhn.io.vn/projects/breakthroughcv-aipowered-job-candidate-cv-optimization-platform)
+- 👨‍💻 **Portfolio tác giả**: [ThienHN (thienhn0910.vercel.app)](https://thienhn.io.vn/) | [Xem CV trực tuyến](https://thienhn.io.vn/cv)
+- 🚀 **Khám phá thêm dự án khác**: [Portfolio Projects Showcase](https://thienhn.io.vn/projects)
